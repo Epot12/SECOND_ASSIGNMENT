@@ -1,5 +1,5 @@
 import time
-from BloomFilter import *
+from SEQUENTIAL.BloomFilter import *
 
 def run_synthetic_test():
     n_elements = 50_000  # number of elements to insert
