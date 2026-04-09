@@ -1,5 +1,6 @@
 import math
 from bitarray import bitarray
+import hashlib
 
 class BloomFilter:
     def __init__(self, expected_elements:int, false_positive_rate:float):
@@ -8,6 +9,7 @@ class BloomFilter:
         self.m, self.k = self._calculate_params()
         self.bitmap = bitarray(self.m)
         self.bitmap.setall(0) #to set all 0
+        self.elements_count = 0
 
     def _calculate_params(self)-> tuple[int, int]:
         if self.n <= 0:
@@ -59,12 +61,19 @@ class BloomFilter:
             yield (h1 + i * h2) % self.m
 
     def add(self, item):
-        """Inserts an element into the filter by setting the corresponding k bits to 1."""
-        # call the utility to get the k indices
-        for index in self._get_hashes(item):
+        """Inserts an element and controls saturation efficiently."""
+        # calculate the indices before writing
+        indices = list(self._get_hashes(item))
+
+        # setting bits
+        for index in indices:
             self.bitmap[index] = True
-            if self.get_actual_fp_rate(self) > self.p:
-                raise ValueError("The filter is saturated")
+
+        self.elements_count += 1
+
+        if self.elements_count > self.n and self.elements_count % 100 == 0:
+            if self.get_actual_fp_rate() > self.p:
+                raise ValueError(f"Saturated filter! Current FP rate: {self.get_actual_fp_rate():.4f}")
 
     def __contains__(self, item) -> bool:
         """
