@@ -1,6 +1,6 @@
 import math
 from bitarray import bitarray
-import hashlib
+import mmh3
 
 class BloomFilter:
     def __init__(self, expected_elements:int, false_positive_rate:float):
@@ -10,6 +10,7 @@ class BloomFilter:
         self.bitmap = bitarray(self.m)
         self.bitmap.setall(0) #to set all 0
         self.elements_count = 0
+        self.set_bits = 0
 
     def _calculate_params(self)-> tuple[int, int]:
         if self.n <= 0:
@@ -51,10 +52,9 @@ class BloomFilter:
         # converting the item to string and then to byte for hashing
         item_bytes = self._to_bytes(item)
 
-        # We generate two basic hashes (SHA-256 broken in half)
-        digest = hashlib.sha256(item_bytes).digest()
-        h1 = int.from_bytes(digest[:8], 'big')
-        h2 = int.from_bytes(digest[8:16], 'big')
+        # mmh3.hash64 already returns a tuple with two 64-bit integers (h1 and h2)
+        # It is used signed=False to have positive numbers, and a seed
+        h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
 
         for i in range(self.k):
             # Double hashing formula to obtain k different indices
@@ -67,13 +67,18 @@ class BloomFilter:
 
         # setting bits
         for index in indices:
-            self.bitmap[index] = True
+            # If the bit is 0, it is set to 1 and the global counter is incremented.
+            # If it was already at 1 (collision), nothing is done
+            if not self.bitmap[index]:
+                self.bitmap[index] = True
+                self.set_bits += 1
 
         self.elements_count += 1
 
         if self.elements_count > self.n and self.elements_count % 100 == 0:
-            if self.get_actual_fp_rate() > self.p:
-                raise ValueError(f"Saturated filter! Current FP rate: {self.get_actual_fp_rate():.4f}")
+            actual_fp = self.get_actual_fp_rate()
+            if actual_fp > self.p:
+                raise ValueError(f"Saturated filter! Current FP rate: {actual_fp:.4f}")
 
     def __contains__(self, item) -> bool:
         """
@@ -93,9 +98,9 @@ class BloomFilter:
 
     def get_fill_ratio(self) -> float:
         """Returns the percentage of bits set to 1."""
-        return self.bitmap.count(True) / self.m
+        return self.set_bits / self.m
 
 
     def get_actual_fp_rate(self) -> float:
         """Calculates the current probability of false positives based on the bits set."""
-        return (self.bitmap.count(True) / self.m) ** self.k
+        return (self.set_bits / self.m) ** self.k
