@@ -53,8 +53,8 @@ class BloomFilter:
 
         # We generate two basic hashes (SHA-256 broken in half)
         digest = hashlib.sha256(item_bytes).digest()
-        h1 = int.from_bytes(digest[:4], 'big')
-        h2 = int.from_bytes(digest[4:8], 'big')
+        h1 = int.from_bytes(digest[:8], 'big')
+        h2 = int.from_bytes(digest[8:16], 'big')
 
         for i in range(self.k):
             # Double hashing formula to obtain k different indices
