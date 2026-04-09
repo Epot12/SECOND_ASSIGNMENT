@@ -1,11 +1,12 @@
 import math
+from bitarray import bitarray
 
 class BloomFilter:
     def __init__(self, expected_elements:int, false_positive_rate:float):
         self.n = expected_elements
         self.p = false_positive_rate
 
-    def calculate_params(self)-> tuple[int, int]:
+    def _calculate_params(self)-> tuple[int, int]:
         if self.n <= 0:
             raise ValueError(f"The number of expected items (n) must be > 0. Received: {self.n}")
         if not (0.0 < self.p < 1.0):
