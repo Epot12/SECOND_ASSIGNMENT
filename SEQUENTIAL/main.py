@@ -20,8 +20,11 @@ def run_synthetic_test():
 
     print("\n Data entry")
     start_time = time.time()
-    for item in present_items:
-        bf.add(item)
+    try:
+        for item in present_items:
+            bf.add(item)
+    except ValueError as e:
+        print(f"\n[WARNING] Insertion interrupted due to saturation: {e}")
     insertion_time = time.time() - start_time
     print(f"Insertion completed in {insertion_time:.2f} s.")
     print(f"Current fill ratio: {bf.get_fill_ratio() * 100:.2f}% bits are 1.")
