@@ -63,6 +63,8 @@ class BloomFilter:
         # call the utility to get the k indices
         for index in self._get_hashes(item):
             self.bitmap[index] = True
+            if self.get_actual_fp_rate(self) > self.p:
+                raise ValueError("The filter is saturated")
 
     def __contains__(self, item) -> bool:
         """
@@ -78,3 +80,13 @@ class BloomFilter:
 
         # arriving here means all bits were 1
         return True
+
+
+    def get_fill_ratio(self) -> float:
+        """Returns the percentage of bits set to 1."""
+        return self.bitmap.count(True) / self.m
+
+
+    def get_actual_fp_rate(self) -> float:
+        """Calculates the current probability of false positives based on the bits set."""
+        return (self.bitmap.count(True) / self.m) ** self.k
