@@ -58,3 +58,23 @@ class BloomFilter:
             # Double hashing formula to obtain k different indices
             yield (h1 + i * h2) % self.m
 
+    def add(self, item):
+        """Inserts an element into the filter by setting the corresponding k bits to 1."""
+        # call the utility to get the k indices
+        for index in self._get_hashes(item):
+            self.bitmap[index] = True
+
+    def __contains__(self, item) -> bool:
+        """
+        Check if an item is (probably) present.
+        Returns False if the item is definitely NOT in the set.
+        Returns True if the item COULD be in the set.
+        """
+        # check the k indices generated for this item
+        for index in self._get_hashes(item):
+            # If even ONE bit is 0 (False), the element was never inserted
+            if not self.bitmap[index]:
+                return False
+
+        # arriving here means all bits were 1
+        return True
