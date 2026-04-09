@@ -2,20 +2,21 @@ import time
 from SEQUENTIAL.BloomFilter import *
 
 def run_synthetic_test():
-    n_elements = 50_000  # number of elements to insert
+    filter_capacity = 50_000
+    elements_to_insert = 50_000  # number of elements to insert
     p_rate = 0.05  # expected false positive rate
 
     print(f"Test initialization")
-    print(f"Target: n={n_elements}, False Positive Rate={p_rate * 100}%")
-    bf = BloomFilter(n_elements, p_rate)
+    print(f"Target: n={filter_capacity}, False Positive Rate={p_rate * 100}%")
+    bf = BloomFilter(filter_capacity, p_rate)
     print(f"Calculated parameters: m={bf.m} bit, k={bf.k} hash functions")
 
     print("\n Generation of synthetic data")
     # Data to be inserted
-    present_items = [f"item_IN_{i}" for i in range(n_elements)]
+    present_items = [f"item_IN_{i}" for i in range(elements_to_insert)]
 
     # Data not to be inserted
-    absent_items = [f"item_OUT_{i}" for i in range(n_elements)]
+    absent_items = [f"item_OUT_{i}" for i in range(elements_to_insert)]
     print(f"Generated {len(present_items)} elements to insert and {len(absent_items)} elements not to be inserted.")
 
     print("\n Data entry")
