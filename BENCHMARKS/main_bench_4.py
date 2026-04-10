@@ -60,19 +60,20 @@ def run_benchmark():
     print(" TEST 2: PARALLEL ARCHITECTURE (Restart Pool) ")
     print("=" * 58)
 
-    with ParallelScalableBloomFilter(initial_capacity, target_p_rate) as par1_sbf:
-        start_par1_ins = time.perf_counter()
-        par1_sbf.add_batch(present_items)
-        par1_ins_time = time.perf_counter() - start_par1_ins
+    par1_sbf = ParallelScalableBloomFilter(initial_capacity, target_p_rate)
 
-        start_par1_read = time.perf_counter()
-        par1_fn = par1_sbf.contains_batch(present_items).count(False)
-        par1_fp = par1_sbf.contains_batch(absent_items).count(True)
-        par1_read_time = time.perf_counter() - start_par1_read
+    start_par1_ins = time.perf_counter()
+    par1_sbf.add_batch(present_items)
+    par1_ins_time = time.perf_counter() - start_par1_ins
 
-        print(f" -> Insertion Time: {par1_ins_time:.2f} s.")
-        print(f" -> Read Time:      {par1_read_time:.2f} s.")
-        print(f" -> FP Rate:        {(par1_fp / len(absent_items)) * 100:.2f}%")
+    start_par1_read = time.perf_counter()
+    par1_fn = par1_sbf.contains_batch(present_items).count(False)
+    par1_fp = par1_sbf.contains_batch(absent_items).count(True)
+    par1_read_time = time.perf_counter() - start_par1_read
+
+    print(f" -> Insertion Time: {par1_ins_time:.2f} s.")
+    print(f" -> Read Time:      {par1_read_time:.2f} s.")
+    print(f" -> FP Rate:        {(par1_fp / len(absent_items)) * 100:.2f}%")
 
 
     # TEST 3: PARALLEL ARCHITECTURE (Persistent Pool)
