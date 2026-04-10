@@ -22,17 +22,28 @@ def _worker_add_chunk(args):
     items, k, m = args
     local_elements = len(items)
 
+    # Copying global reference in a local variable
+
+    _bitmap = shared_bitmap
+
     for item in items:
-        item_bytes = item.encode('utf-8') if isinstance(item, str) else str(item).encode('utf-8')
+        if type(item) is str:
+            item_bytes = item.encode('utf-8')
+        elif type(item) is bytes:
+            item_bytes = item
+        elif type(item) is int:
+            item_bytes = item.to_bytes(8, 'big', signed=True)
+        else:
+            item_bytes = str(item).encode('utf-8')
+
+        # calculating hash
         h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
 
         for i in range(k):
             index = (h1 + i * h2) % m
-            # Lock-Free and Idempotent Operation:
-            # Writing 1 over an existing 1 does not change the memory state.
-            shared_bitmap[index] = 1
 
-    # Updating only the element counter (protected by lock)
+            _bitmap[index] = 1
+
     with shared_lock:
         shared_elements_count.value += local_elements
 
@@ -41,15 +52,31 @@ def _worker_contains_chunk(args):
     """Tests a block of elements in parallel."""
     items, k, m = args
     results = []
+    _bitmap = shared_bitmap
     for item in items:
-        item_bytes = item.encode('utf-8') if isinstance(item, str) else str(item).encode('utf-8')
+        if type(item) is str:
+            item_bytes = item.encode('utf-8')
+        elif type(item) is bytes:
+            item_bytes = item
+        elif type(item) is int:
+            # Converts the integer to 8 native bytes. No string created.
+            item_bytes = item.to_bytes(8, 'big', signed=True)
+        else:
+            # Fallback
+            item_bytes = str(item).encode('utf-8')
+
+        # Calculating hash
         h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
         is_present = True
         for i in range(k):
             index = (h1 + i * h2) % m
-            if shared_bitmap[index] == 0:
+
+            # reading memory. If even one bit is 0, the element is NOT there.
+            if _bitmap[index] == 0:
                 is_present = False
                 break
+
+        # saving result
         results.append(is_present)
     return results
 
@@ -88,7 +115,7 @@ class ParallelBloomFilter:
         chunks = self._chunkify(items)
         args = [(chunk, self.k, self.m) for chunk in chunks]
 
-        with mp.Pool(processes=self.num_processes,
+        with mp.Pool(processes=self.num_processes, # TODO: valutare se lasciare la gestione dei processi così oppure far sì che i processi rimangano aperti in background per tutta la vita dell'istanza della classe
                      initializer=worker_init,
                      initargs=(self.bitmap, self.elements_count, self.lock)) as pool:
             pool.map(_worker_add_chunk, args)
