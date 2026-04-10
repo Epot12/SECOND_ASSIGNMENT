@@ -180,7 +180,7 @@ class ParallelScalableBloomFilter:
 
         # Threshold Calculation (Efficiency Factor = 10)
         # requesting the time lost in overhead to be at most 10% of the total
-        target_efficiency = 10
+        target_efficiency = 5
 
         # Final calculation: Rounded to the nearest hundred
         raw_threshold = int((t_overhead * target_efficiency) / t_hash)
