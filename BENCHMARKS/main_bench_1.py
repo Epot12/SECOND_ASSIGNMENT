@@ -1,7 +1,6 @@
 # BENCHMARK: SEQUENTIAL VS PARALLEL (NON-SCALABLE)
 
 import time
-import multiprocessing as mp
 import sys
 import os
 
