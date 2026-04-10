@@ -1,4 +1,10 @@
-from BloomFilter import *
+import os, sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
+
+from SEQUENTIAL.BloomFilter import  *
 
 class ScalableBloomFilter:
     def __init__(self, initial_capacity: int, target_fp_rate: float, tightening_ratio: float = 0.9,
