@@ -49,7 +49,6 @@ def _worker_add_chunk(args):
             index = (h1 + i * h2) % m
             _bitmap[index] = 1
 
-
 def _worker_contains_chunk(items):
     """
     Checks for a block of elements in all parallel layers.
@@ -121,6 +120,8 @@ class ParallelScalableBloomFilter:
         self.params = []  # List of tuples (m, k)
         self.capacities = []  # List of abilities (n) of each level
         self.elements_counts = []  # Counters purely managed by the Master (no Lock)
+        self.min_chunk_size = 1000  # fallback value
+        self._calibrate_threshold()
 
     def _add_new_layer(self):
         """Allocate memory for a new level (Performed only by the Master)"""
@@ -146,6 +147,50 @@ class ParallelScalableBloomFilter:
         print(f"[SYSTEM] Allocated Level {current_depth}: "
               f"Capacity={new_capacity}, m={m} bits, k={k}")
 
+    def _calibrate_threshold(self):
+        """
+        Runs a micro-benchmark at startup to calculate the optimal threshold
+        based on current hardware
+        """
+        import time
+        print("[SYSTEM] Hardware calibration ")
+
+        # pure computation time of a single element (T_hash)
+        test_data = b"benchmark_string"
+        k_test = max(1, round(-math.log(self.p0) / math.log(2)))
+        m_test = 100_000
+
+        start_cpu = time.perf_counter()
+        for _ in range(50_000):
+            h1, h2 = mmh3.hash64(test_data, seed=42, signed=False)
+            for i in range(k_test):
+                _ = (h1 + i * h2) % m_test
+        end_cpu = time.perf_counter()
+
+        t_hash = (end_cpu - start_cpu) / 50_000
+
+        # measurement of the communication overhead (T_overhead)
+        # opening a dummy pool to simulate startup cost and IPC
+        with mp.Pool(1) as pool:
+            start_ipc = time.perf_counter()
+            pool.map(len, [[1]])
+            end_ipc = time.perf_counter()
+
+        t_overhead = end_ipc - start_ipc
+
+        # Threshold Calculation (Efficiency Factor = 10)
+        # requesting the time lost in overhead to be at most 10% of the total
+        target_efficiency = 10
+
+        # Final calculation: Rounded to the nearest hundred
+        raw_threshold = int((t_overhead * target_efficiency) / t_hash)
+        self.min_chunk_size = max(1000, round(raw_threshold, -2))
+
+        print(f"[SYSTEM] Calibration completed:")
+        print(f"         - Single hash cost: {t_hash * 1e6:.4f} µs")
+        print(f"         - Measured overhead: {t_overhead * 1000:.2f} ms")
+        print(f"         - Calculated threshold: {self.min_chunk_size} elements per chunk")
+
     def _chunkify(self, data: list):
         chunk_size = math.ceil(len(data) / self.num_processes)
         return [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
@@ -159,7 +204,8 @@ class ParallelScalableBloomFilter:
         current_idx = 0
         jobs = []
 
-        # PHASE 1: ROUTING AND PRE-ALLOCATION (On the Master)
+        # Job creation
+
         while current_idx < total_items:
             # If there are no filters, or the last one is full, a new one is created
             if not self.bitmaps or self.elements_counts[-1] >= self.capacities[-1]:
@@ -168,41 +214,67 @@ class ParallelScalableBloomFilter:
             active_layer_idx = len(self.bitmaps) - 1
             available_space = self.capacities[-1] - self.elements_counts[-1]
 
-            # calculating how many elements from this batch will go into the active_layer
+            # Calculating how many items will go into this layer
             end_idx = min(current_idx + available_space, total_items)
             items_for_this_layer = items[current_idx:end_idx]
 
-            # counter updated (done by the master, zero competition, zero lock)
+            # Master updates the counters (0 lock)
             self.elements_counts[-1] += len(items_for_this_layer)
 
-            # dividing the data into chunks for the Workers
-            chunks = self._chunkify(items_for_this_layer)
-            for chunk in chunks:
-                # job says to insert this chunk into level X
-                jobs.append((active_layer_idx, chunk))
+            # job creation (chunking if necessary)
+            if len(items_for_this_layer) < self.min_chunk_size:
+                jobs.append((active_layer_idx, items_for_this_layer))
+            else:
+                chunks = self._chunkify(items_for_this_layer)
+                for chunk in chunks:
+                    jobs.append((active_layer_idx, chunk))
 
-            # main index advances
+
             current_idx = end_idx
 
-        # PHASE 2: PARALLEL EXECUTION (On Workers)
-        with mp.Pool(processes=self.num_processes,
-                     initializer=worker_init,
-                     initargs=(self.bitmaps, self.params)) as pool:
-            pool.map(_worker_add_chunk, jobs)
+
+        # EXECUTION
+
+        if total_items < self.min_chunk_size and len(jobs) == 1:
+            # SEQUENTIAL execution if the batch is very small (no overhead)
+            print(f"[ROUTER] Small Batch ({len(items)} < {self.min_chunk_size}) -> Sequential Execution")
+            worker_init(self.bitmaps, self.params)
+            _worker_add_chunk(jobs[0])
+        else:
+            # PARALLEL execution for large loads
+            print(f"[ROUTER] Parallel Execution triggered")
+            with mp.Pool(processes=self.num_processes,
+                         initializer=worker_init,
+                         initargs=(self.bitmaps, self.params)) as pool:
+                pool.map(_worker_add_chunk, jobs)
+
 
     def contains_batch(self, items: list) -> list[bool]:
         """Massive search using all levels"""
         if not self.bitmaps:
             return [False] * len(items)
 
-        chunks = self._chunkify(items)
+        # check of the threshold
+        if len(items) < self.min_chunk_size:
+            # sequential execution
+            print(f"[ROUTER] Small Batch ({len(items)} < {self.min_chunk_size}) -> Sequential Execution")
+            # passing global variables to master
+            worker_init(self.bitmaps, self.params)
 
-        with mp.Pool(processes=self.num_processes,
-                     initializer=worker_init,
-                     initargs=(self.bitmaps, self.params)) as pool:
-            results_2d = pool.map(_worker_contains_chunk, chunks)
+            return _worker_contains_chunk(items)
 
-        return [res for sublist in results_2d for res in sublist]
+        # parallel execution
+        else:
+            print(f"[ROUTER] Parallel Execution triggered")
+            chunks = self._chunkify(items)
+
+            with mp.Pool(processes=self.num_processes,
+                         initializer=worker_init,
+                         initargs=(self.bitmaps, self.params)) as pool:
+                results_2d = pool.map(_worker_contains_chunk, chunks)
+
+            # flattening the list of lists returned by the workers
+            return [res for sublist in results_2d for res in sublist]
 
     def total_elements_count(self) -> int:
         """Returns the mathematical total of the sorted items."""
