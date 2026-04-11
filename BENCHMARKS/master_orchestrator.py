@@ -4,10 +4,11 @@ import subprocess
 import json
 
 
-def run_command(command: list[str], description: str):
+def run_command(command: list[str], description: str, cwd: str):
     print(f"\n[ORCHESTRATOR] {description}")
     try:
-        subprocess.run(command, check=True)
+        # cwd enforces execution in project root
+        subprocess.run(command, check=True, cwd=cwd)
     except subprocess.CalledProcessError:
         print(f"\n[CRITICAL ERROR] Execution failed: {' '.join(command)}")
         sys.exit(1)
@@ -54,45 +55,70 @@ def print_report(gil_data, nogil_data):
     print("=================================================================\n")
 
 
+def check_file_exists(filepath: str, role: str):
+    """Checks if the file exists and stops the program with a clear error if it is missing."""
+    if not os.path.exists(filepath):
+        print(f"\n[DIAGNOSTIC ERROR] Fundamental file missing: ({role})!")
+        print(f"Searching here: {filepath}")
+        sys.exit(1)
+
+
 def main():
+    # Ensures that base_dir is the parent of the BENCHMARKS folder
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     bench_dir = os.path.join(base_dir, "BENCHMARKS")
 
+    print(f"[SYSTEM] Project Root Directory: {base_dir}")
+
     # 1. SETUP ENVIRONMENTS (OS-Agnostic with uv)
-    run_command(["uv", "venv", ".venv-gil", "--python", "3.12"], "Setting up GIL Environment...")
-    run_command(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib"], "Installing GIL dependencies...")
+    run_command(["uv", "venv", ".venv-gil", "--python", "3.12"], "Setting up GIL Environment...", base_dir)
+    run_command(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib"], "Installing GIL dependencies...",
+                base_dir)
 
-    run_command(["uv", "python", "install", "3.13t"], "Fetching Free-Threaded Python...")
-    run_command(["uv", "venv", ".venv-nogil", "--python", "3.13t"], "Setting up No-GIL Environment...")
+    run_command(["uv", "python", "install", "3.13t"], "Fetching Free-Threaded Python...", base_dir)
+    run_command(["uv", "venv", ".venv-nogil", "--python", "3.13t"], "Setting up No-GIL Environment...", base_dir)
     run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib"],
-                "Installing No-GIL dependencies...")
+                "Installing No-GIL dependencies...", base_dir)
 
-    # 2. RESOLVE EXECUTABLES DYNAMICALLY (Windows vs POSIX)
+    # RESOLVE EXECUTABLES DYNAMICALLY
     is_windows = os.name == 'nt'
     bin_dir = "Scripts" if is_windows else "bin"
     exe = ".exe" if is_windows else ""
 
     python_gil = os.path.join(base_dir, ".venv-gil", bin_dir, f"python{exe}")
-    python_nogil = os.path.join(base_dir, ".venv-nogil", bin_dir, f"python{exe}")
+
+    python_nogil_standard = os.path.join(base_dir, ".venv-nogil", bin_dir, f"python{exe}")
+    python_nogil_t = os.path.join(base_dir, ".venv-nogil", bin_dir, f"python3.13t{exe}")
+    python_nogil = python_nogil_t if os.path.exists(python_nogil_t) else python_nogil_standard
 
     script_gil = os.path.join(bench_dir, "bench_gil.py")
     script_nogil = os.path.join(bench_dir, "bench_nogil.py")
 
-    # 3. RUN TELEMETRY WORKERS
-    run_command([python_gil, script_gil], "Executing GIL Workloads (Tests 1-4)...")
-    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Test 5)...")
+    # check
+    check_file_exists(python_gil, "Python GIL Interpreter")
+    check_file_exists(script_gil, "Benchmark GIL Script")
+    check_file_exists(python_nogil, "Python No-GIL Interpreter")
+    check_file_exists(script_nogil, "Benchmark No-GIL Script")
+    # ================================
 
-    # 4. AGGREGATE TELEMETRY
+    # RUN TELEMETRY WORKERS
+    run_command([python_gil, script_gil], "Executing GIL Workloads (Tests 1-4)...", base_dir)
+    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Test 5)...", base_dir)
+
+    # AGGREGATE TELEMETRY
     gil_json = os.path.join(bench_dir, 'telemetry_gil.json')
     nogil_json = os.path.join(bench_dir, 'telemetry_nogil.json')
+
+    check_file_exists(gil_json, "File JSON measurements GIL")
+    check_file_exists(nogil_json, "File JSON measurements No-GIL")
 
     with open(gil_json, 'r') as f: gil_data = json.load(f)
     with open(nogil_json, 'r') as f: nogil_data = json.load(f)
 
-    # 5. GENERATE FINAL REPORT
+    # GENERATING FINAL REPORT
     print_report(gil_data, nogil_data)
 
-    # Clean up telemetry files (optional but clean)
+    # Clean up telemetry files
     os.remove(gil_json)
     os.remove(nogil_json)
 
