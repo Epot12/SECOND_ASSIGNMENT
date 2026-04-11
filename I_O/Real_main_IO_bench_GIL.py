@@ -15,8 +15,8 @@ from DATA_MANAGEMENT.data_loader import common_crawl_stream
 
 # STRESS TEST ROUTINE
 async def run_stress_test():
-    TOTAL_ITEMS = 500_000  # Three million elements to impose significant load on RAM and CPU
-    BATCH_SIZE = 10_000      # Large enough to justify the overhead of Inter-Process Communication (IPC)
+    TOTAL_ITEMS = 5_000_000  # Three million elements to impose significant load on RAM and CPU
+    BATCH_SIZE = 1_000_000      # Large enough to justify the overhead of Inter-Process Communication (IPC)
     DATA_PATH = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
 
     print("=" * 60)
@@ -30,7 +30,7 @@ async def run_stress_test():
     print("\n[TEST 1] Executing Sequential Orchestration (Stop-and-Wait)...")
 
     # The context manager ensures proper initialization and teardown of the Process Pool and Shared Memory
-    with PermPoolScalableBloomFilter(initial_capacity=50_000, target_fp_rate=0.01) as bf_seq:
+    with PermPoolScalableBloomFilter(initial_capacity=200_000, target_fp_rate=0.01) as bf_seq:
         seq_processor = StreamProcessor(bf_seq, batch_size=BATCH_SIZE)
 
         start_time = time.perf_counter()
@@ -49,7 +49,7 @@ async def run_stress_test():
 
     print("\n[TEST 2] Executing Asynchronous Parallel Orchestration (Producer-Consumer)...")
 
-    with PermPoolScalableBloomFilter(initial_capacity=50_000, target_fp_rate=0.01) as bf_async:
+    with PermPoolScalableBloomFilter(initial_capacity=200_000, target_fp_rate=0.01) as bf_async:
         async_processor = AsyncParallelStreamProcessor(bf_async, batch_size=BATCH_SIZE)
 
         start_time = time.perf_counter()
