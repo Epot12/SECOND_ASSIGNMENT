@@ -1,5 +1,5 @@
 import json
-
+import os, sys
 
 def prepare_full_dataset(input_file, output_file):
     print(f"Start total extraction of URLs from the file {input_file}...")
@@ -33,5 +33,15 @@ def prepare_full_dataset(input_file, output_file):
 
 
 if __name__ == "__main__":
-    # Update file names with correct paths in data/ folder
-    prepare_full_dataset("data/cdx-00000.txt", "data/common_crawl_FULL.txt")
+
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+    project_root = os.path.dirname(current_dir)
+
+
+    input_path = os.path.join(project_root, "DATA", "cdx-00000")
+    output_path = os.path.join(project_root, "DATA", "common_crawl_FULL.txt")
+
+    
+    prepare_full_dataset(input_path, output_path)
