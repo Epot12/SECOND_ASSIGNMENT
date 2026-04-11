@@ -81,7 +81,9 @@ def main():
     run_command(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "bitarray"], "Ensuring GIL dependencies...", base_dir)
 
     # SETUP NO-GIL ENVIRONMENT
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray"], "Ensuring No-GIL dependencies...", base_dir)
+
+    run_command(["uv", "python", "install", "3.13t"],
+                "Checking/Fetching Free-Threaded Python...", base_dir)
 
     path_nogil_venv = os.path.join(base_dir, ".venv-nogil")
     if not os.path.exists(path_nogil_venv):
@@ -90,7 +92,7 @@ def main():
     else:
         print("\n[ORCHESTRATOR] No-GIL Environment already exists. Skipping creation.")
 
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib"],
+    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray"],
                 "Ensuring No-GIL dependencies...", base_dir)
 
     # solving executables and script
