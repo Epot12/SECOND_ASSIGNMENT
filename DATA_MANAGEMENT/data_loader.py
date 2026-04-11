@@ -20,6 +20,6 @@ async def common_crawl_stream(file_path, total_items):
                 yield url
                 count += 1
 
-                # Cede il controllo all'Event Loop per permettere ai consumatori di lavorare.
+
                 if count % 2000 == 0:
                     await asyncio.sleep(0)
