@@ -1,9 +1,10 @@
 import os, sys, time, json
 import multiprocessing as mp
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
+current_dir = os.path.dirname(os.path.abspath(__file__)) # REAL_DATA
+bench_dir = os.path.dirname(current_dir)                 # BENCHMARKS
+project_root = os.path.dirname(bench_dir)                # SECOND_ASSIGNMENT
+sys.path.insert(0, project_root)
 
 from SEQUENTIAL.ScalableBloomFilter import ScalableBloomFilter as SeqBloom
 from PARALLEL.ScalMultProcBloom import ParallelScalableBloomFilter as OnDemandBloom
@@ -20,7 +21,7 @@ def run():
     print(f"[SYSTEM] Pre-loading {ins + tst:,} REAL items into RAM. Please wait...")
 
     # building the path to real data
-    data_path = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
+    data_path = os.path.join(project_root, "DATA", "common_crawl_FULL.txt")
 
     # reading in RAM before starting measuring time
     all_real_items = []
