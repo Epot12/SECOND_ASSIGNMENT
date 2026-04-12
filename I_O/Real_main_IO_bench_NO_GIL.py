@@ -10,12 +10,12 @@ sys.path.insert(0, parent_dir)
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter
 from SEQ_I_O.seq_stream import *
 from ASYNC_I_O.async_stream import *
-from DATA_MANAGEMENT.data_loader import common_crawl_stream
+from DATA_MANAGEMENT.data_loader import mmap_url_stream
 
 # STRESS TEST ROUTINE
 async def run_stress_test():
-    TOTAL_ITEMS = 500_000  # One million elements to impose significant load on RAM and CPU
-    BATCH_SIZE = 10_000  # Large enough to justify the overhead of No-GIL Thread dispatching
+    TOTAL_ITEMS = 5_000_000  # One million elements to impose significant load on RAM and CPU
+    BATCH_SIZE = 50_000  # Large enough to justify the overhead of No-GIL Thread dispatching
     DATA_PATH = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
 
     print("=" * 60)
@@ -35,7 +35,7 @@ async def run_stress_test():
         start_time = time.perf_counter()
 
         # Blocking ingestion: execution halts every 50k elements for processing
-        await seq_processor.ingest(common_crawl_stream(DATA_PATH, TOTAL_ITEMS))
+        await seq_processor.ingest(mmap_url_stream(DATA_PATH, TOTAL_ITEMS))
 
         seq_total_time = time.perf_counter() - start_time
         seq_throughput = TOTAL_ITEMS / seq_total_time
@@ -55,7 +55,7 @@ async def run_stress_test():
 
         # ingestion: network stream operates continuously;
         # computational processing is strictly delegated to background threads.
-        await async_processor.run_stream(common_crawl_stream(DATA_PATH, TOTAL_ITEMS))
+        await async_processor.run_stream(mmap_url_stream(DATA_PATH, TOTAL_ITEMS))
 
         async_total_time = time.perf_counter() - start_time
         async_throughput = TOTAL_ITEMS / async_total_time
