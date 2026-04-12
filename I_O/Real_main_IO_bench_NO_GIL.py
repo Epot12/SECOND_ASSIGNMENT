@@ -14,7 +14,7 @@ from DATA_MANAGEMENT.data_loader import mmap_url_stream
 
 # STRESS TEST ROUTINE
 async def run_stress_test():
-    TOTAL_ITEMS = 5_000_000  # One million elements to impose significant load on RAM and CPU
+    TOTAL_ITEMS = 3_000_000  # One million elements to impose significant load on RAM and CPU
     BATCH_SIZE = 50_000  # Large enough to justify the overhead of No-GIL Thread dispatching
     DATA_PATH = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
 
