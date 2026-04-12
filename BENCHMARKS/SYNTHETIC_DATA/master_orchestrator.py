@@ -83,9 +83,6 @@ def main():
 
     # SETUP NO-GIL ENVIRONMENT
 
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
-                "Ensuring No-GIL dependencies...", base_dir)
-
     path_nogil_venv = os.path.join(base_dir, ".venv-nogil")
     if not os.path.exists(path_nogil_venv):
         run_command(["uv", "venv", ".venv-nogil", "--python", "3.13t"],
@@ -93,7 +90,8 @@ def main():
     else:
         print("\n[ORCHESTRATOR] No-GIL Environment already exists. Skipping creation.")
 
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray"],
+    # 2. Installiamo TUTTO (incluso numpy) nell'ambiente appena confermato
+    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
                 "Ensuring No-GIL dependencies...", base_dir)
 
     # solving executables and script
