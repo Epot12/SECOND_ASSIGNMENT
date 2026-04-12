@@ -1,4 +1,5 @@
 import time
+import asyncio
 
 
 class StreamProcessor:
@@ -20,22 +21,46 @@ class StreamProcessor:
         self.buffer = []
         self.stats = []  # measurements for final report
 
+
     async def ingest(self, stream_generator):
         """
-        Consumes an asynchronous data generator.
+        Consumes a SYNCHRONOUS data generator (like mmap_url_stream).
         """
         io_time = 0.0
         cpu_time = 0.0
+
+        # measuring I/O
         t_start_io = time.perf_counter()
-        async for item in stream_generator:
+
+
+        for item in stream_generator:
             self.buffer.append(item)
+
+            # accumulating I/O time (reading and decoding mmap)
             io_time += (time.perf_counter() - t_start_io)
+
             if len(self.buffer) >= self.batch_size:
-                # The ingestion phase freezes here until the batch is inserted
+                # The CPU-bound phase begins (insertion into the Bloom Filter)
                 t_start_cpu = time.perf_counter()
+
+                # Even though the loop is synchronous, we process the batch async
                 await self.process_current_batch()
+
                 cpu_time += (time.perf_counter() - t_start_cpu)
+
+                # handing over control to the Event Loop for a moment
+                # This prevents the mmap loop from blocking other tasks
+                await asyncio.sleep(0)
+
+            # Reset the timer for the next reading from the generator
             t_start_io = time.perf_counter()
+
+        # processing last remaining batch (if any)
+        if self.buffer:
+            t_start_cpu = time.perf_counter()
+            await self.process_current_batch()
+            cpu_time += (time.perf_counter() - t_start_cpu)
+
         print(f"      [SEQ-PROFILER] Pure I/O Time: {io_time:.2f} s")
         print(f"      [SEQ-PROFILER] Pure CPU Time: {cpu_time:.2f} s")
 

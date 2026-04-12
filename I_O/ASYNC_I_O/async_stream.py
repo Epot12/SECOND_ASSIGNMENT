@@ -28,25 +28,36 @@ class AsyncParallelStreamProcessor:
 
     async def _producer(self, stream_generator):
         """
-        INGESTION (Never stops to wait for calculation)
+        INGESTION (Optimized for synchronous mmap)
         """
         t_start_io = time.perf_counter()
         buffer = []
-        async for item in stream_generator:
+
+
+        for item in stream_generator:
             buffer.append(item)
+
+            # calculating the I/O time (which now includes mmap paging)
             self.io_time += (time.perf_counter() - t_start_io)
+
             if len(buffer) >= self.batch_size:
-                # putting the batch in the queue. If the queue is full (maxsize),
-                # only pauses until the consumer frees up space.
+                # When we queue the batch, the Event Loop has the opportunity
+                # to pass control to the _consumer
                 await self.queue.put(buffer)
-                buffer = []  # Reset of local buffer
+                buffer = []
+
+                # We explicitly give up control.
+                # Since mmap is synchronous and very fast, without this sleep(0)
+                # the producer may fill the queue too quickly.
+                await asyncio.sleep(0)
+
             t_start_io = time.perf_counter()
 
-        # Management of the last incomplete batch at the end of the stream
+        # Management of the last remaining batch
         if buffer:
             await self.queue.put(buffer)
 
-        # Termination signal for the Consumer
+        # Closing signal for the Consumer
         await self.queue.put(None)
 
     def _blocking_batch_injection(self, batch):

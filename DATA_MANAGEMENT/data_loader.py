@@ -1,25 +1,22 @@
-
-import asyncio
-import aiofiles
+import mmap
 
 
-# --- REAL-WORLD DATA GENERATOR (COMMON CRAWL) ---
-async def common_crawl_stream(file_path, total_items):
+def mmap_url_stream(file_path, total_items):
     """
-    Asynchronously reads real-world URLs from the Common Crawl dataset.
-    This replaces synthetic data with actual Disk I/O operations.
+    Simulates a high-performance stream by mapping the file to memory.
     """
     count = 0
-    async with aiofiles.open(file_path, mode='r', encoding='utf-8') as f:
-        async for line in f:
-            if count >= total_items:
-                break
+    with open(file_path, "rb") as f:  # opening in binary mode for maximum speed
+        # mapping the file (access=ACCESS_READ is used to avoid corrupting the data)
+        with mmap.mmap(f.fileno(), length=0, access=mmap.ACCESS_READ) as mm:
+            # using readline() directly on the mmap object
+            for line in iter(mm.readline, b""):
+                if count >= total_items:
+                    break
 
-            url = line.strip()
-            if url:
-                yield url
-                count += 1
+                # decoding only here (CPU-bound operation)
+                url = line.decode('utf-8').strip()
+                if url:
+                    yield url
+                    count += 1
 
-
-                if count % 2000 == 0:
-                    await asyncio.sleep(0)

@@ -10,13 +10,13 @@ sys.path.insert(0, parent_dir)
 from SEQ_I_O.seq_stream import StreamProcessor
 from ASYNC_I_O.async_stream import AsyncParallelStreamProcessor
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter
-from DATA_MANAGEMENT.data_loader import common_crawl_stream
+from DATA_MANAGEMENT.data_loader import mmap_url_stream
 
 
 # STRESS TEST ROUTINE
 async def run_stress_test():
     TOTAL_ITEMS = 5_000_000  # Three million elements to impose significant load on RAM and CPU
-    BATCH_SIZE = 1_000_000      # Large enough to justify the overhead of Inter-Process Communication (IPC)
+    BATCH_SIZE = 50_000      # Large enough to justify the overhead of Inter-Process Communication (IPC)
     DATA_PATH = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
 
     print("=" * 60)
@@ -36,7 +36,7 @@ async def run_stress_test():
         start_time = time.perf_counter()
 
         # Blocking ingestion: execution halts every batch for multiprocessing execution
-        await seq_processor.ingest(common_crawl_stream(DATA_PATH, TOTAL_ITEMS))
+        await seq_processor.ingest(mmap_url_stream(DATA_PATH, TOTAL_ITEMS))
 
         seq_total_time = time.perf_counter() - start_time
         seq_throughput = TOTAL_ITEMS / seq_total_time
@@ -56,7 +56,7 @@ async def run_stress_test():
 
         # ingestion: network stream operates continuously;
         # computational processing is strictly delegated to the persistent Process Pool.
-        await async_processor.run_stream(common_crawl_stream(DATA_PATH, TOTAL_ITEMS))
+        await async_processor.run_stream(mmap_url_stream(DATA_PATH, TOTAL_ITEMS))
 
         async_total_time = time.perf_counter() - start_time
         async_throughput = TOTAL_ITEMS / async_total_time
