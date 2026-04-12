@@ -166,6 +166,9 @@ class ThreadedScalableBloomFilter:
         self.np_shadow_bitmaps.append(np_shadow_bufs)
         self.layers_info.append((buf, m, k))
 
+        self.capacities.append(new_capacity)
+        self.elements_counts.append(0)
+
         print(f"[THREAD-SYSTEM] Allocated Layer {current_depth}: Capacity={new_capacity}, m={m} bytes (Zero-Copy Ram)")
 
     def _chunkify(self, data: list):
