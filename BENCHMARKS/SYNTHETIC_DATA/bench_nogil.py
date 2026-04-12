@@ -5,6 +5,7 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
+from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
 
 
 def run():
@@ -27,6 +28,20 @@ def run():
         s5.contains_batch(absent_items)
         t2 = time.perf_counter()
         results['NativeThreads'] = {'ins': t1 - t0, 'read': t2 - t1}
+
+    del s5
+
+    with MapReduceBloom(cap, fpr) as s6:
+        t0 = time.perf_counter()
+        s6.add_batch(present_items)
+        t1 = time.perf_counter()
+
+        s6.contains_batch(present_items)
+        s6.contains_batch(absent_items)
+        t2 = time.perf_counter()
+
+        results['MapReduceVectorized'] = {'ins': t1 - t0, 'read': t2 - t1}
+
 
     # exporting measurements
     out_path = os.path.join(current_dir, 'telemetry_nogil.json')
