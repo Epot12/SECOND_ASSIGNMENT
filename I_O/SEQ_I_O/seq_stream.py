@@ -24,11 +24,20 @@ class StreamProcessor:
         """
         Consumes an asynchronous data generator.
         """
+        io_time = 0.0
+        cpu_time = 0.0
+        t_start_io = time.perf_counter()
         async for item in stream_generator:
             self.buffer.append(item)
+            io_time += (time.perf_counter() - t_start_io)
             if len(self.buffer) >= self.batch_size:
                 # The ingestion phase freezes here until the batch is inserted
+                t_start_cpu = time.perf_counter()
                 await self.process_current_batch()
+                cpu_time += (time.perf_counter() - t_start_cpu)
+            t_start_io = time.perf_counter()
+        print(f"      [SEQ-PROFILER] Pure I/O Time: {io_time:.2f} s")
+        print(f"      [SEQ-PROFILER] Pure CPU Time: {cpu_time:.2f} s")
 
     async def process_current_batch(self):
         """

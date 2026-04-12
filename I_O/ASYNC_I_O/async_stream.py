@@ -30,14 +30,17 @@ class AsyncParallelStreamProcessor:
         """
         INGESTION (Never stops to wait for calculation)
         """
+        t_start_io = time.perf_counter()
         buffer = []
         async for item in stream_generator:
             buffer.append(item)
+            self.io_time += (time.perf_counter() - t_start_io)
             if len(buffer) >= self.batch_size:
                 # putting the batch in the queue. If the queue is full (maxsize),
                 # only pauses until the consumer frees up space.
                 await self.queue.put(buffer)
                 buffer = []  # Reset of local buffer
+            t_start_io = time.perf_counter()
 
         # Management of the last incomplete batch at the end of the stream
         if buffer:
@@ -74,9 +77,12 @@ class AsyncParallelStreamProcessor:
 
             # Moves blocking work to a system thread.
             # The asyncio Event Loop remains free to continue the _producer.
+            t_start_cpu = time.perf_counter()
             await asyncio.to_thread(self._blocking_batch_injection, batch)
 
+            self.cpu_time += (time.perf_counter() - t_start_cpu)
             elapsed = time.perf_counter() - start_time
+
 
             # memory management
             self._apply_aging()
@@ -95,11 +101,16 @@ class AsyncParallelStreamProcessor:
         Main entry point. Starts Producer and Consumer
         at the same time
         """
+        self.io_time = 0.0
+        self.cpu_time = 0.0
         producer_task = asyncio.create_task(self._producer(stream_generator))
         consumer_task = asyncio.create_task(self._consumer())
 
         # waits for the conclusion of both the operations
         await asyncio.gather(producer_task, consumer_task)
+
+        print(f"      [ASYNC-PROFILER] Puro I/O Time (Producer): {self.io_time:.2f} s")
+        print(f"      [ASYNC-PROFILER] Pure CPU Time (Consumer): {self.cpu_time:.2f} s")
 
     def _apply_aging(self):
         """
