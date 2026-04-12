@@ -95,7 +95,7 @@ def main():
     else:
         print("\n[ORCHESTRATOR] No-GIL Environment already exists. Skipping creation.")
 
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray"],
+    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
                 "Ensuring No-GIL dependencies...", base_dir)
 
     # solving executables and script
@@ -123,8 +123,7 @@ def main():
 
     # execution
     run_command([python_gil, script_gil], "Executing GIL Workloads (Tests 1-4)...", base_dir)
-    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Test 5)...", base_dir)
-
+    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Tests 5 and 6)...", base_dir)
     # REPORTING
     gil_json = os.path.join(current_dir, 'telemetry_gil.json')
     nogil_json = os.path.join(current_dir, 'telemetry_nogil.json')

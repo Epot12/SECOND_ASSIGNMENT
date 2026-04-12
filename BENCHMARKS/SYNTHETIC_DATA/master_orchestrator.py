@@ -65,8 +65,9 @@ def check_file_exists(filepath: str, role: str):
 
 def main():
     # Determine the project root (parent of the BENCHMARKS folder)
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    bench_dir = os.path.join(base_dir, "BENCHMARKS")
+    current_dir = os.path.dirname(os.path.abspath(__file__))  # SYNTHETIC_DATA
+    bench_dir = os.path.dirname(current_dir)  # BENCHMARKS
+    base_dir = os.path.dirname(bench_dir)  # SECOND_ASSIGNMENT
 
     print(f"[SYSTEM] Project Root Directory: {base_dir}")
 
@@ -82,8 +83,8 @@ def main():
 
     # SETUP NO-GIL ENVIRONMENT
 
-    run_command(["uv", "python", "install", "3.13t"],
-                "Checking/Fetching Free-Threaded Python...", base_dir)
+    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
+                "Ensuring No-GIL dependencies...", base_dir)
 
     path_nogil_venv = os.path.join(base_dir, ".venv-nogil")
     if not os.path.exists(path_nogil_venv):
@@ -109,8 +110,8 @@ def main():
     python_nogil = python_nogil_t if os.path.exists(python_nogil_t) else python_nogil_std
 
     # benchmark scripts paths
-    script_gil = os.path.join(bench_dir, "bench_gil.py")
-    script_nogil = os.path.join(bench_dir, "bench_nogil.py")
+    script_gil = os.path.join(current_dir, "bench_gil.py")
+    script_nogil = os.path.join(current_dir, "bench_nogil.py")
 
     #check
     check_file_exists(python_gil, "Python GIL Interpreter")
@@ -123,8 +124,8 @@ def main():
     run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Test 5)...", base_dir)
 
     # REPORTING
-    gil_json = os.path.join(bench_dir, 'telemetry_gil.json')
-    nogil_json = os.path.join(bench_dir, 'telemetry_nogil.json')
+    gil_json = os.path.join(current_dir, 'telemetry_gil.json')
+    nogil_json = os.path.join(current_dir, 'telemetry_nogil.json')
 
     check_file_exists(gil_json, "Telemetry JSON (GIL)")
     check_file_exists(nogil_json, "Telemetry JSON (No-GIL)")
