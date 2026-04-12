@@ -13,19 +13,13 @@ from ASYNC_I_O.async_stream import *
 
 
 # TRAFFIC GENERATOR (NETWORK SIMULATION)
-async def network_stream(total_items):
-    """
-    Simulates a high-speed network log stream.
-    The brief sleep command emulates the latency associated with packet arrival,
-    effectively modeling an I/O-bound operation.
-    """
+def network_stream(total_items):
+
     for i in range(total_items):
         yield f"USER_SESSION_{i % 10_000}_{i}"
 
-        # Simulates network latency: yields execution for 1 millisecond every 2000 elements.
-        # This minimal latency is crucial to evaluate the asynchronous overlap between I/O and CPU.
         if i % 2000 == 0:
-            await asyncio.sleep(0.001)
+            time.sleep(0.001)
 
 
 # STRESS TEST ROUTINE
