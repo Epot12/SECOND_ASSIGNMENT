@@ -11,8 +11,7 @@ def _thread_add_chunk(args):
     MAP Phase: Zero False Sharing.
     Everything happens in the L1/L2 cache of the single core.
     """
-    m, k, items = args
-    local_indices = set() # Isolated local memory
+    shadow_buf, m, k, items = args
 
     for item in items:
         if type(item) is str:
@@ -29,9 +28,8 @@ def _thread_add_chunk(args):
 
         for i in range(k):
             index = (h1 + i * h2) % m
-            local_indices.add(index) # LOCAL writing, no hardware lock
+            shadow_buf[index] = 1
 
-    return local_indices
 
 
 def _thread_contains_chunk(args):
@@ -92,6 +90,8 @@ class ThreadedScalableBloomFilter:
         # Persistent Thread Pool
         self.executor = ThreadPoolExecutor(max_workers=self.num_threads)
         self.np_bitmaps = []  # New list for NumPy views
+        self.shadow_bitmaps = []
+        self.np_shadow_bitmaps = []
 
     def __enter__(self):
         return self
@@ -157,11 +157,14 @@ class ThreadedScalableBloomFilter:
         # NATIVE MEMORY ALLOCATION: Fast, zero-copy, automatically garbage-collected
         buf = bytearray(m)
         np_buf = np.frombuffer(buf, dtype=np.uint8)
+        shadow_bufs = [bytearray(m) for _ in range(self.num_threads)]
+        np_shadow_bufs = [np.frombuffer(b, dtype=np.uint8) for b in shadow_bufs]
+
         self.bitmaps.append(buf)
         self.np_bitmaps.append(np_buf)
+        self.shadow_bitmaps.append(shadow_bufs)
+        self.np_shadow_bitmaps.append(np_shadow_bufs)
         self.layers_info.append((buf, m, k))
-        self.capacities.append(new_capacity)
-        self.elements_counts.append(0)
 
         print(f"[THREAD-SYSTEM] Allocated Layer {current_depth}: Capacity={new_capacity}, m={m} bytes (Zero-Copy Ram)")
 
@@ -187,16 +190,23 @@ class ThreadedScalableBloomFilter:
 
             # MAP PHASE (Parallel)
             chunks = self._chunkify(items_for_this_layer)
-            jobs = [(m, k, chunk) for chunk in chunks]
+            jobs = []
+            for thread_id, chunk in enumerate(chunks):
+                t_shadow_buf = self.shadow_bitmaps[-1][thread_id]
+                jobs.append((t_shadow_buf, m, k, chunk))
 
             # map returns a generator with thread local sets
-            local_sets = list(self.executor.map(_thread_add_chunk, jobs))
+            list(self.executor.map(_thread_add_chunk, jobs))
 
-            # REDUCE PHASE (Sequential, but very fast)
-            # merging all sets returned by threads into a single set
-            global_indices = set().union(*local_sets)
-            np_buf = self.np_bitmaps[-1]
-            np_buf[list(global_indices)] = 1
+            global_np_buf = self.np_bitmaps[-1]
+            local_np_bufs = self.np_shadow_bitmaps[-1]
+
+            for thread_id in range(len(chunks)):
+
+                global_np_buf |= local_np_bufs[thread_id]
+
+                local_np_bufs[thread_id].fill(0)
+
             current_idx = end_idx
 
     def contains_batch(self, items: list) -> list[bool]:
