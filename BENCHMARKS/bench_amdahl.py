@@ -8,7 +8,7 @@ sys.path.insert(0, parent_dir)
 
 # importing scaling engine and filters
 from utils.scaling_engine import run_strong_scaling
-# Sostituisci questi import con i nomi corretti delle tue classi migliori
+
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceNoGIL
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 
@@ -16,7 +16,7 @@ from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 def run():
     print("\n[AMDAHL WORKER] Starting Strong Scaling Benchmarks...")
 
-    max_cores = 8  # Fisici + Logici
+    max_cores = 8  # logical cores
     fixed_size = 3_000_000
 
     results = {}
@@ -29,7 +29,7 @@ def run():
     print("Testing IPC Architecture...")
     results["Amdahl_IPC"] = run_strong_scaling(SotaIPC, max_cores, fixed_size)
 
-    # Salva il file JSON per il Grand Master
+    # saving JSON file for Grand Master
     out_path = os.path.join(current_dir, 'telemetry_amdahl.json')
     with open(out_path, 'w') as f:
         json.dump(results, f, indent=4)
