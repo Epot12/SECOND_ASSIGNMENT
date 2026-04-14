@@ -15,30 +15,33 @@ def run_command(command: list[str], description: str, cwd: str):
 
 
 def print_report(gil_data, nogil_data):
-    print("\n" + "=" * 65)
+    print("\n" + "=" * 85)
     print("SCIENTIFIC BENCHMARK REPORT: SCALABLE BLOOM FILTERS")
-    print("=" * 65)
+    print("=" * 85)
 
     all_results = {**gil_data, **nogil_data}
 
-    print(f"{'Architecture':<25} | {'Insertion (s)':<13} | {'Query (s)':<11} | {'Total (s)':<9}")
-    print("-" * 65)
+    # table with also CPU metrics
+    print(f"{'Architecture':<25} | {'Wall: Ins (s)':<13} | {'Wall: Query':<11} | {'CPU: Ins (s)':<12} | {'CPU: Query':<12}")
+    print("-" * 85)
 
     seq_tot = all_results['Sequential']['ins'] + all_results['Sequential']['read']
 
     for name, metrics in all_results.items():
-        tot = metrics['ins'] + metrics['read']
-        print(f"{name:<25} | {metrics['ins']:<13.2f} | {metrics['read']:<11.2f} | {tot:<9.2f}")
 
-    print("\n" + "=" * 65)
+        cpu_ins = metrics.get('ins_cpu', 0.0)
+        cpu_read = metrics.get('read_cpu', 0.0)
+        print(f"{name:<25} | {metrics['ins']:<13.2f} | {metrics['read']:<11.2f} | {cpu_ins:<12.2f} | {cpu_read:<12.2f}")
+
+    print("\n" + "=" * 85)
     print("MICRO-ARCHITECTURAL SPEEDUP ANALYSIS (vs Sequential)")
-    print("=" * 65)
+    print("=" * 85)
 
     for name, metrics in all_results.items():
         if name == 'Sequential': continue
         tot = metrics['ins'] + metrics['read']
         speedup = seq_tot / tot if tot > 0 else 0
-        print(f" -> {name:<22} : {speedup:.2f}x faster globally")
+        print(f" -> {name:<22} : {speedup:.2f}x faster globally (Wall-Clock)")
 
     # Deep architectural insights
     sota_ins = all_results['SotaIPC']['ins']
