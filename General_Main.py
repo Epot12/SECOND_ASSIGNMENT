@@ -73,22 +73,23 @@ def main():
         else:
             print(f"[WARNING] I/O Script not found: {script_path.name}. Skipping.")
 
-        # 4.5 Execution of Scaling Tests (Amdahl's Law etc)
-        print("\n[ORCHESTRATOR] Initiating Amdahl's Law Scaling Analysis...")
-        script_amdahl = root_dir / "BENCHMARKS" / "bench_amdahl.py"
-        scal_results = {}
+    # 4.5 Execution of Scaling Tests (Amdahl's Law etc)
+    print("\n[ORCHESTRATOR] Initiating Amdahl's Law Scaling Analysis...")
+    script_scal = root_dir / "BENCHMARKS" / "bench_script.py"
+    scal_results = {}
 
-        if script_amdahl.exists():
-            # Running the script using python_nogil
-            run_and_capture([str(python_nogil), str(script_amdahl)], "Running Amdahl Benchmarks...", root_dir)
+    if script_scal.exists():
+        # Running the script using python_nogil
+        run_and_capture([str(python_nogil), str(script_scal)], "Running scaling Benchmarks...", root_dir)
 
-            scal_json = root_dir / "BENCHMARKS" / "telemetry_scal.json"
-            if scal_json.exists():
-                with open(scal_json, 'r') as f:
-                    scal_results = json.load(f)
-                os.remove(scal_json)  # cleaning temporary file
-        else:
-            print(f"[WARNING] Amdahl Script not found: {script_amdahl.name}. Skipping.")
+
+        scal_json = root_dir / "BENCHMARKS" / "telemetry_bench_script.json"
+        if scal_json.exists():
+            with open(scal_json, 'r') as f:
+                scal_results = json.load(f)
+            os.remove(scal_json)  # cleaning temporary file
+    else:
+        print(f"[WARNING] Amdahl Script not found: {script_scal.name}. Skipping.")
 
     # 5. Data Aggregation and Storage (For LaTeX/Word Tables)
     print("\n[DATA EXPORT] Aggregating telemetry for Tables...")
@@ -109,7 +110,8 @@ def main():
     aggregated_tables = {
         "Synthetic_Workloads": synth_all,
         "Real_Workloads": real_all,
-        "IO_Stress_Tests": io_results
+        "IO_Stress_Tests": io_results,
+        "Scaling_Laws": scal_results
     }
 
     tables_file = tables_dir / "Aggregated_Benchmark_Tables.json"
@@ -119,6 +121,10 @@ def main():
 
     # 6. Plot Generation
     generate_plots(synth_all, real_all, io_results, plots_dir)
+
+
+    if scal_results:
+        plot_amdahl_scaling(scal_results, plots_dir)
 
     print("\n" + "=" * 70)
     print(" ORCHESTRATION COMPLETE. ALL DATA SECURED.")
