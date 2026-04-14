@@ -122,9 +122,17 @@ def main():
     # 6. Plot Generation
     generate_plots(synth_all, real_all, io_results, plots_dir)
 
-
+    # drawing scaling plots if data exist
     if scal_results:
-        plot_amdahl_scaling(scal_results, plots_dir)
+        # passing only specific sections to related functions
+        if "Amdahl" in scal_results:
+            plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
+
+        if "Gustafson" in scal_results:
+            plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
+
+        if "Granularity" in scal_results:
+            plot_chunk_optimization(scal_results["Granularity"], plots_dir)
 
     print("\n" + "=" * 70)
     print(" ORCHESTRATION COMPLETE. ALL DATA SECURED.")
