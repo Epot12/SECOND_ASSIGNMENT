@@ -3,6 +3,7 @@ import multiprocessing as mp
 import gc
 from utils.stats_engine import *
 
+
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
@@ -26,20 +27,26 @@ def run():
     # TEST 1: SEQUENTIAL
     print(" -> Running Test 1: Sequential Architecture...")
     ins_times, read_times = [], []
+    ins_cpu_times, read_cpu_times = [], []
     for run_idx in range(TOTAL_RUNS):
         s1 = SeqBloom(cap, fpr)
         gc.disable()
         t0 = time.perf_counter()
+        t0_cpu = time.process_time()
         for item in present_items: s1.add(item)
         t1 = time.perf_counter()
+        t1_cpu = time.process_time()
         for item in present_items: _ = item in s1
         for item in absent_items: _ = item in s1
         t2 = time.perf_counter()
+        t2_cpu = time.process_time()
         gc.enable()
 
         if run_idx >= WARMUP_RUNS:
             ins_times.append(t1 - t0)
             read_times.append(t2 - t1)
+            ins_cpu_times.append(t1_cpu - t0_cpu)
+            read_cpu_times.append(t2_cpu - t1_cpu)
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
@@ -50,20 +57,26 @@ def run():
     # TEST 2: ON-DEMAND
     print(" -> Running Test 2: On-Demand Multiprocessing...")
     ins_times, read_times = [], []
+    ins_cpu_times, read_cpu_times = [], []
     for run_idx in range(TOTAL_RUNS):
         s2 = OnDemandBloom(cap, fpr)
         gc.disable()
         t0 = time.perf_counter()
+        t0_cpu = time.process_time()
         s2.add_batch(present_items)
         t1 = time.perf_counter()
+        t1_cpu = time.process_time()
         s2.contains_batch(present_items)
         s2.contains_batch(absent_items)
         t2 = time.perf_counter()
+        t2_cpu = time.process_time()
         gc.enable()
 
         if run_idx >= WARMUP_RUNS:
             ins_times.append(t1 - t0)
             read_times.append(t2 - t1)
+            ins_cpu_times.append(t1_cpu - t0_cpu)
+            read_cpu_times.append(t2_cpu - t1_cpu)
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
@@ -73,20 +86,26 @@ def run():
     # TEST 3: LAZY RESTART
     print(" -> Running Test 3: Lazy Restart Architecture...")
     ins_times, read_times = [], []
+    ins_cpu_times, read_cpu_times = [], []
     for run_idx in range(TOTAL_RUNS):
         with LazyBloom(cap, fpr) as s3:
             gc.disable()
             t0 = time.perf_counter()
+            t0_cpu = time.process_time()
             s3.add_batch(present_items)
             t1 = time.perf_counter()
+            t1_cpu = time.process_time()
             s3.contains_batch(present_items)
             s3.contains_batch(absent_items)
             t2 = time.perf_counter()
+            t2_cpu = time.process_time()
             gc.enable()
 
         if run_idx >= WARMUP_RUNS:
             ins_times.append(t1 - t0)
             read_times.append(t2 - t1)
+            ins_cpu_times.append(t1_cpu - t0_cpu)
+            read_cpu_times.append(t2_cpu - t1_cpu)
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
@@ -96,20 +115,26 @@ def run():
     # TEST 4: SOTA IPC
     print(" -> Running Test 4: SOTA IPC (Persistent Pool)...")
     ins_times, read_times = [], []
+    ins_cpu_times, read_cpu_times = [], []
     for run_idx in range(TOTAL_RUNS):
         with SotaBloom(cap, fpr) as s4:
             gc.disable()
             t0 = time.perf_counter()
+            t0_cpu = time.process_time()
             s4.add_batch(present_items)
             t1 = time.perf_counter()
+            t1_cpu = time.process_time()
             s4.contains_batch(present_items)
             s4.contains_batch(absent_items)
             t2 = time.perf_counter()
+            t2_cpu = time.process_time()
             gc.enable()
 
         if run_idx >= WARMUP_RUNS:
             ins_times.append(t1 - t0)
             read_times.append(t2 - t1)
+            ins_cpu_times.append(t1_cpu - t0_cpu)
+            read_cpu_times.append(t2_cpu - t1_cpu)
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
