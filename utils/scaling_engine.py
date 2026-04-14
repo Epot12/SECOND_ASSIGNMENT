@@ -1,7 +1,7 @@
 import time
 import gc
 import math
-import statistics
+import stats_engine
 
 
 # THE SCALING ENGINE - Amdahl, Gustafson and Granularity Profiler
