@@ -3,7 +3,7 @@ import subprocess
 import hashlib
 import re
 from pathlib import Path
-
+import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -127,58 +127,42 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
 
 
 def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
-    """
-    Generates the Strong Scaling graph (Amdahl's Law).
-    Draws curves calculating speedup vs. time on 1 core.
-    """
     print("\n[DATA VIZ] Generating Amdahl's Law Scaling Plot...")
-
-    if not amdahl_results:
-        print("[WARNING] No Amdahl data found. Skipping plot.")
-        return
+    if not amdahl_results: return
 
     plt.figure(figsize=(10, 6))
 
-    # setting the colors and labels for the 3 architectures
-    colors = {
-        "Amdahl_NoGIL_Map_Red": "#4C72B0",  # Blue
-        "Amdahl_NoGIL_Mul_Thr": "#55A868",  # green
-        "Amdahl_IPC": "#C44E52"  # red
-    }
-
-    labels = {
-        "Amdahl_NoGIL_Map_Red": "No-GIL (Optimized Map-Reduce)",
-        "Amdahl_NoGIL_Mul_Thr": "No-GIL (Standard Multi-Threading)",
-        "Amdahl_IPC": "Multiprocessing (IPC Shared Memory)"
-    }
+    # Define professional color palette and academic labels for the evaluated architectures
+    colors = {"Amdahl_NoGIL_Map_Red": "#4C72B0", "Amdahl_NoGIL_Mul_Thr": "#55A868", "Amdahl_IPC": "#C44E52"}
+    labels = {"Amdahl_NoGIL_Map_Red": "No-GIL (Optimized Map-Reduce)",
+              "Amdahl_NoGIL_Mul_Thr": "No-GIL (Standard Multi-Threading)",
+              "Amdahl_IPC": "Multiprocessing (IPC Shared Memory)"}
 
     max_cores = 1
 
-    # drawing real curves
-    for arch_name, times_dict in amdahl_results.items():
+    for arch_name, data in amdahl_results.items():
+        cores = sorted([int(k) for k in data.keys()])
 
-        cores = sorted([int(k) for k in times_dict.keys()])
-        times = [times_dict[str(c)] for c in cores]
+        # STATISTICAL EXTRACTION: Utilizing the empirical mean execution time
+        means = [data[str(c)]["mean"] for c in cores]
 
-        if max(cores) > max_cores:
-            max_cores = max(cores)
+        if max(cores) > max_cores: max_cores = max(cores)
 
-        # T(1) / T(N) calculating speedup
-        base_time = times[0]  # The time it took with 1 core
-        speedups = [base_time / t for t in times]
+        # Speedup calculation normalized against the single-core baseline (T1 / Tn)
+        base_time = means[0]
+        speedups = [base_time / m for m in means]
 
         plt.plot(cores, speedups, marker='o', linewidth=2.5, markersize=8,
-                 label=labels.get(arch_name, arch_name),
-                 color=colors.get(arch_name, "black"))
+                 label=labels.get(arch_name, arch_name), color=colors.get(arch_name, "black"))
 
-    # drawing the "Ideal Speedup" line (y = x)
+    # Plotting the theoretical ideal speedup (linear scalability)
     ideal_x = np.arange(1, max_cores + 1)
     plt.plot(ideal_x, ideal_x, '--', color='gray', linewidth=2, label='Ideal Speedup')
 
-    # Vertical line for the 4 physical cores (Hyper-Threading limit)
+    # Demarcating the hardware boundary (transition from physical cores to Hyper-Threading)
     plt.axvline(x=4, color='orange', linestyle=':', linewidth=2, label='Physical Core Limit')
 
-    # Graphic aesthetics
+    # Refining axis aesthetics and typography
     plt.xlabel('Number of Threads / Processes (Cores)', fontweight='bold')
     plt.ylabel('Speedup (x)', fontweight='bold')
     plt.title("Amdahl's Law: Strong Scaling Analysis", fontweight='bold', pad=20)
@@ -192,71 +176,43 @@ def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
     plt.savefig(output_file, format='pdf', bbox_inches='tight')
     plt.close()
 
-    print(f"[DATA VIZ] Amdahl plot successfully saved to {output_file}")
-
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from pathlib import Path
-
 
 def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
-    """
-    Generate a high-fidelity plot for Weak Scaling analysis (Gustafson's Law).
+    print("\n[DATA VIZ] Generating Gustafson's Law Plot with Confidence Intervals...")
+    if not gustafson_results: return
 
-    In Weak Scaling, the workload per processor is kept constant. Theoretically,
-    the execution time should remain invariant as the system scales. Deviations
-    indicate communication overhead or resource contention.
-    """
-    print("\n[DATA VIZ] Generating Gustafson's Law Weak Scaling Plot...")
-
-    if not gustafson_results:
-        print("[WARNING] No Gustafson data available for plotting.")
-        return
-
-    # Academic plotting configuration
+    # Academic plotting configuration via Seaborn
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.4)
-    plt.rcParams.update({
-        'font.family': 'serif',
-        'text.usetex': False,  # Set to True if a LaTeX distribution is installed
-        'pdf.fonttype': 42
-    })
-
     fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Professional color palette for architectural distinction
-    palette = {"Gustafson_NoGIL_Map_Red": "#4C72B0", "Gustafson_IPC": "#C44E52"}
+    palette = {"Gustafson_NoGIL_Map_Red": "#4C72B0", "Gustafson_NoGIL_Mul_Thr": "#55A868", "Gustafson_IPC": "#C44E52"}
+    labels = {"Gustafson_NoGIL_Map_Red": "No-GIL (Optimized Map-Reduce)",
+              "Gustafson_NoGIL_Mul_Thr": "No-GIL (Standard Multi-Threading)",
+              "Gustafson_IPC": "Multiprocessing (IPC Shared Memory)"}
 
     max_cores = 1
     baseline_time = None
 
     for arch_name, data in gustafson_results.items():
-        # Ensure numeric sorting of keys (cores)
         cores = sorted([int(k) for k in data.keys()])
-        times = [data[str(c)]["time"] for c in cores]
 
-        if max(cores) > max_cores:
-            max_cores = max(cores)
+        # STATISTICAL EXTRACTION: Extracting empirical means and their respective 95% Confidence Intervals
+        means = [data[str(c)]["mean"] for c in cores]
+        margins = [data[str(c)]["ci_95_margin"] for c in cores]
 
-        if baseline_time is None:
-            baseline_time = times[0]  # Execution time at unit scale
+        if max(cores) > max_cores: max_cores = max(cores)
+        if baseline_time is None: baseline_time = means[0]
 
-        # Plot empirical data
-        ax.plot(cores, times, marker='s', markersize=10, linewidth=3,
-                label=arch_name.replace("_", " "), color=palette.get(arch_name, "black"))
+        # RENDERING ERROR BARS: Displaying statistical uncertainty across multiple runs
+        ax.errorbar(cores, means, yerr=margins, fmt='-s', markersize=8, linewidth=2.5, capsize=5, capthick=2,
+                    label=labels.get(arch_name, arch_name), color=palette.get(arch_name, "black"))
 
-    # Plot Theoretical Ideal (Constant Time)
-    ax.axhline(y=baseline_time, color='gray', linestyle='--', linewidth=2,
-               label='Ideal Weak Scaling (Isometric)')
-
-    # Hardware limit annotation (e.g., Physical Core threshold)
+    # Plotting the theoretical isometric weak scaling (constant execution time)
+    ax.axhline(y=baseline_time, color='gray', linestyle='--', linewidth=2, label='Ideal Weak Scaling')
     ax.axvline(x=4, color='#E68143', linestyle=':', linewidth=2, label='Physical Cores Boundary')
 
-    # Refining axis aesthetics
     ax.set_xlabel('Computational Units (Cores/Threads)', fontweight='bold')
     ax.set_ylabel('Execution Time (Seconds)', fontweight='bold')
-    ax.set_title("Weak Scaling Perspective: Execution Time Invariance", fontweight='bold', pad=20)
+    ax.set_title("Weak Scaling Perspective: 95% Confidence Intervals", fontweight='bold', pad=20)
     ax.set_xticks(range(1, max_cores + 1))
     ax.legend(frameon=True, loc='upper left', fontsize='small')
 
@@ -264,45 +220,39 @@ def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
     output_file = plots_dir / 'Fig4_Gustafson_Weak_Scaling.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
-    print(f"[DATA VIZ] Gustafson plot successfully exported to {output_file}")
 
 
 def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
-    """
-    Perform Granularity Analysis to identify the optimal work-distribution threshold.
-
-    The plot visualizes the trade-off between parallelization overhead (small chunks)
-    and load imbalance/tail latency (large chunks), typically resulting in a
-    U-shaped efficiency curve.
-    """
-    print("\n[DATA VIZ] Generating Chunk Granularity Optimization Plot...")
-
-    if not chunk_results:
-        return
+    print("\n[DATA VIZ] Generating Granularity Plot with Error Bands...")
+    if not chunk_results: return
 
     plt.figure(figsize=(10, 6))
 
-    # Extract data: sizes are keys, times are values
     sizes = sorted([int(k) for k in chunk_results.keys()])
-    times = [chunk_results[str(s)] for s in sizes]
 
-    # Use logarithmic scale for X-axis as chunk sizes often span orders of magnitude
-    plt.semilogx(sizes, times, marker='D', color='#8172B3', linewidth=3, markersize=8,
-                 label='Empirical Performance')
+    # STATISTICAL EXTRACTION: Converting dictionary values to NumPy arrays for vectorized operations
+    means = np.array([chunk_results[str(s)]["mean"] for s in sizes])
+    margins = np.array([chunk_results[str(s)]["ci_95_margin"] for s in sizes])
 
-    # Identify and highlight the mathematical optimum
-    min_time = min(times)
-    optimal_size = sizes[times.index(min_time)]
+    # Plotting the primary empirical mean trajectory
+    plt.semilogx(sizes, means, marker='D', color='#8172B3', linewidth=3, markersize=8, label='Empirical Mean')
 
-    plt.annotate(f'Optimal Size: {optimal_size:,}',
-                 xy=(optimal_size, min_time),
-                 xytext=(optimal_size, min_time + (max(times) * 0.1)),
+    # Rendering a semi-transparent band to visualize the 95% Confidence Interval dispersion
+    plt.fill_between(sizes, means - margins, means + margins, color='#8172B3', alpha=0.2,
+                     label='95% Confidence Interval')
+
+    # Identifying and annotating the mathematical optimum (efficiency sweet spot)
+    min_time = min(means)
+    optimal_size = sizes[np.argmin(means)]
+
+    plt.annotate(f'Optimal Size: {optimal_size:,}', xy=(optimal_size, min_time),
+                 xytext=(optimal_size, min_time + (max(means) * 0.1)),
                  arrowprops=dict(facecolor='black', shrink=0.05, width=1),
                  horizontalalignment='center', fontweight='bold')
 
     plt.xlabel('Task Granularity (Chunk Size)', fontweight='bold')
     plt.ylabel('Total Processing Latency (Seconds)', fontweight='bold')
-    plt.title('Granularity Profiling: Identifying the Efficiency "Sweet Spot"', fontweight='bold', pad=20)
+    plt.title('Granularity Profiling with Statistical Certainty', fontweight='bold', pad=20)
     plt.grid(True, which="both", ls="-", alpha=0.5)
     plt.legend()
 
@@ -310,4 +260,3 @@ def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
     output_file = plots_dir / 'Fig5_Granularity_Analysis.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
-    print(f"[DATA VIZ] Granularity plot exported to {output_file}")
