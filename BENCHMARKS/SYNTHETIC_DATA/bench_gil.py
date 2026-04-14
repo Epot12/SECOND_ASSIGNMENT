@@ -50,8 +50,19 @@ def run():
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
-    results['Sequential'] = {'ins': stat_ins['mean'], 'read': stat_read['mean']}
-    print(f"    [+] Insertion: {stat_ins['mean']}s (±{stat_ins['ci_95_margin']}s) | Query: {stat_read['mean']}s (±{stat_read['ci_95_margin']}s)")
+
+    stat_ins_cpu = compute_statistics(ins_cpu_times)
+    stat_read_cpu = compute_statistics(read_cpu_times)
+
+    results['Sequential'] = {
+        'ins': stat_ins['mean'],
+        'read': stat_read['mean'],
+        'ins_cpu': stat_ins_cpu['mean'],
+        'read_cpu': stat_read_cpu['mean']
+    }
+
+    print(f"    [+] Wall-Clock -> Ins: {stat_ins['mean']}s | Query: {stat_read['mean']}s")
+    print(f"    [+] CPU Time   -> Ins: {stat_ins_cpu['mean']}s | Query: {stat_read_cpu['mean']}s")
 
 
     # TEST 2: ON-DEMAND
@@ -80,8 +91,19 @@ def run():
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
-    results['OnDemand'] = {'ins': stat_ins['mean'], 'read': stat_read['mean']}
-    print(f" [+] Insertion: {stat_ins['mean']}s (±{stat_ins['ci_95_margin']}s) | Query: {stat_read['mean']}s (±{stat_read['ci_95_margin']}s)")
+
+    stat_ins_cpu = compute_statistics(ins_cpu_times)
+    stat_read_cpu = compute_statistics(read_cpu_times)
+
+    results['OnDemand'] = {
+        'ins': stat_ins['mean'],
+        'read': stat_read['mean'],
+        'ins_cpu': stat_ins_cpu['mean'],
+        'read_cpu': stat_read_cpu['mean']
+    }
+
+    print(f"    [+] Wall-Clock -> Ins: {stat_ins['mean']}s | Query: {stat_read['mean']}s")
+    print(f"    [+] CPU Time   -> Ins: {stat_ins_cpu['mean']}s | Query: {stat_read_cpu['mean']}s")
 
     # TEST 3: LAZY RESTART
     print(" -> Running Test 3: Lazy Restart Architecture...")
@@ -109,8 +131,19 @@ def run():
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
-    results['LazyRestart'] = {'ins': stat_ins['mean'], 'read': stat_read['mean']}
-    print(f" [+] Insertion: {stat_ins['mean']}s (±{stat_ins['ci_95_margin']}s) | Query: {stat_read['mean']}s (±{stat_read['ci_95_margin']}s)")
+
+    stat_ins_cpu = compute_statistics(ins_cpu_times)
+    stat_read_cpu = compute_statistics(read_cpu_times)
+
+    results['LazyRestart'] = {
+        'ins': stat_ins['mean'],
+        'read': stat_read['mean'],
+        'ins_cpu': stat_ins_cpu['mean'],
+        'read_cpu': stat_read_cpu['mean']
+    }
+
+    print(f"    [+] Wall-Clock -> Ins: {stat_ins['mean']}s | Query: {stat_read['mean']}s")
+    print(f"    [+] CPU Time   -> Ins: {stat_ins_cpu['mean']}s | Query: {stat_read_cpu['mean']}s")
 
     # TEST 4: SOTA IPC
     print(" -> Running Test 4: SOTA IPC (Persistent Pool)...")
@@ -138,8 +171,19 @@ def run():
 
     stat_ins = compute_statistics(ins_times)
     stat_read = compute_statistics(read_times)
-    results['SotaIPC'] = {'ins': stat_ins['mean'], 'read': stat_read['mean']}
-    print(f" [+] Insertion: {stat_ins['mean']}s (±{stat_ins['ci_95_margin']}s) | Query: {stat_read['mean']}s (±{stat_read['ci_95_margin']}s)")
+
+    stat_ins_cpu = compute_statistics(ins_cpu_times)
+    stat_read_cpu = compute_statistics(read_cpu_times)
+
+    results['SotaIPC'] = {
+        'ins': stat_ins['mean'],
+        'read': stat_read['mean'],
+        'ins_cpu': stat_ins_cpu['mean'],
+        'read_cpu': stat_read_cpu['mean']
+    }
+
+    print(f"    [+] Wall-Clock -> Ins: {stat_ins['mean']}s | Query: {stat_read['mean']}s")
+    print(f"    [+] CPU Time   -> Ins: {stat_ins_cpu['mean']}s | Query: {stat_read_cpu['mean']}s")
 
 
     # exporting measurements

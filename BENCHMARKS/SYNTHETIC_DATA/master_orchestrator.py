@@ -119,7 +119,7 @@ def main():
 
     # execution
     run_command([python_gil, script_gil], "Executing GIL Workloads (Tests 1-4)...", base_dir)
-    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Test 5)...", base_dir)
+    run_command([python_nogil, script_nogil], "Executing No-GIL Workloads (Tests 5-6)...", base_dir)
 
     # REPORTING
     gil_json = os.path.join(current_dir, 'telemetry_gil.json')
