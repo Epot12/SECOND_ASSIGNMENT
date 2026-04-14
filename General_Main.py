@@ -1,14 +1,11 @@
 import os
-import sys
 import json
-from pathlib import Path
-import matplotlib.pyplot as plt
 import seaborn as sns
 from utils.utilities import *
 
-# =========================================================================
+
 # GENERAL MAIN TO AUTOMATE ALL THE PIPELINE OF EXPERIMENTS
-# =========================================================================
+
 DATASET_FILE = "cdx-00000"
 EXPECTED_SHA256 = "3D9F2F2BAEFF3DB20262B6E5580A8BA34CECBD3742D0C898B484D5ACF5C476B1"
 
@@ -76,7 +73,24 @@ def main():
         else:
             print(f"[WARNING] I/O Script not found: {script_path.name}. Skipping.")
 
-    # 5. Data Aggregation & Storage (For LaTeX/Word Tables)
+        # 4.5 Execution of Scaling Tests (Amdahl's Law etc)
+        print("\n[ORCHESTRATOR] Initiating Amdahl's Law Scaling Analysis...")
+        script_amdahl = root_dir / "BENCHMARKS" / "bench_amdahl.py"
+        scal_results = {}
+
+        if script_amdahl.exists():
+            # Running the script using python_nogil
+            run_and_capture([str(python_nogil), str(script_amdahl)], "Running Amdahl Benchmarks...", root_dir)
+
+            scal_json = root_dir / "BENCHMARKS" / "telemetry_scal.json"
+            if scal_json.exists():
+                with open(scal_json, 'r') as f:
+                    scal_results = json.load(f)
+                os.remove(scal_json)  # cleaning temporary file
+        else:
+            print(f"[WARNING] Amdahl Script not found: {script_amdahl.name}. Skipping.")
+
+    # 5. Data Aggregation and Storage (For LaTeX/Word Tables)
     print("\n[DATA EXPORT] Aggregating telemetry for Tables...")
 
     with open(root_dir / "BENCHMARKS" / "SYNTHETIC_DATA" / "telemetry_gil.json", 'r') as f:
