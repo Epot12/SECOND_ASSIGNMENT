@@ -1,6 +1,5 @@
 import math
-import stats_engine
-
+import statistics
 
 # STATISTICAL ENGINE CONSTANTS
 
