@@ -260,3 +260,21 @@ def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
     output_file = plots_dir / 'Fig5_Granularity_Analysis.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
+
+
+def load_data(mode, ins, tst):
+    if mode == "synthetic":
+        print(f"[SYSTEM] Generating {ins + tst} Synthetic items...")
+        present = [f"IN_{i}" for i in range(ins)]
+        absent = [f"OUT_{i}" for i in range(tst)]
+        return present, absent
+    else:
+        print(f"[SYSTEM] Pre-loading {ins + tst} REAL items from disk...")
+        data_path = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
+        all_items = []
+        with open(data_path, 'r', encoding='utf-8') as f:
+            for _ in range(ins + tst):
+                line = f.readline()
+                if not line: break
+                all_items.append(line.strip())
+        return all_items[:ins], all_items[ins:ins + tst]
