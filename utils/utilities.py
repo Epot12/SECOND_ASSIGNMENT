@@ -2,7 +2,11 @@ import sys
 import subprocess
 import hashlib
 import re
+import os
 from pathlib import Path
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
 
 # support functions
 
