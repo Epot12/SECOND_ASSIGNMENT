@@ -96,7 +96,7 @@ def main():
         sys.exit(1)
 
     # B. I/O Stress Tests
-    io_orch = io_dir / "io_orchestrator.py"
+    io_orch = io_dir / "master_orchestrator_IO.py"
     if io_orch.exists():
         run_sub_process([str(python_gil), str(io_orch)], "DELEGATING TO I/O ORCHESTRATOR", root_dir)
     else:
