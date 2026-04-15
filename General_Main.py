@@ -43,6 +43,16 @@ def main():
         print("       downloaded from CC-MAIN-2024-10 and extracted in the DATA folder.")
         sys.exit(1)
 
+    is_windows = os.name == 'nt'
+    bin_dir = "Scripts" if is_windows else "bin"
+    exe = ".exe" if is_windows else ""
+
+    python_gil = root_dir / ".venv-gil" / bin_dir / f"python{exe}"
+
+    python_nogil_t = root_dir / ".venv-nogil" / bin_dir / f"python3.13t{exe}"
+    python_nogil_std = root_dir / ".venv-nogil" / bin_dir / f"python{exe}"
+    python_nogil = python_nogil_t if python_nogil_t.exists() else python_nogil_std
+
     # 3. Execution of Base Benchmarks
     print("\n[ORCHESTRATOR] Delegating base benchmarks to Master Orchestrator...")
     sub_orchestrator = root_dir / "BENCHMARKS" / "master_orchestrator.py"
