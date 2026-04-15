@@ -26,34 +26,35 @@ def network_stream(total_items):
 
 
 # parametric STRESS TEST ROUTINE
+# PARAMETRIC STRESS TEST ROUTINE
 async def run_stress_test(mode: str):
     BATCH_SIZE = 50_000  # Large enough to justify IPC overhead
 
-    # 1. dynamic parameter setup
+    # 1. DYNAMIC PARAMETER SETUP
     TOTAL_ITEMS = 5_000_000
     if mode == "synthetic":
-        # generates a new stream for every call
+        INIT_CAP = 200_000
         stream_factory = lambda: network_stream(TOTAL_ITEMS)
         mode_name = "SYNTHETIC (Network Simulation)"
     else:
+        INIT_CAP = 50_000
         DATA_PATH = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
         if not os.path.exists(DATA_PATH):
             print(f"\n[CRITICAL ERROR] Real dataset not found at: {DATA_PATH}")
             sys.exit(1)
-        # generates a new memory-mapped stream at each invocation
         stream_factory = lambda: mmap_url_stream(DATA_PATH, TOTAL_ITEMS)
         mode_name = "REAL DATA (Common Crawl Memory-Mapped)"
 
     print("=" * 60)
     print(f"[INFO] INITIATING STRESS TEST: {mode_name}")
     print(f"[INFO] Elements to process: {TOTAL_ITEMS:,}")
-    print(f"[INFO] Batch Size Configuration: {BATCH_SIZE:,}")
+    print(f"[INFO] Batch Size: {BATCH_SIZE:,} | Initial Capacity: {INIT_CAP:,}")
     print("=" * 60)
 
     # TEST 1: SEQUENTIAL STREAM PROCESSOR (Stop-and-Wait)
     print("\n[TEST 1] Executing Sequential Orchestration (Stop-and-Wait)...")
 
-    with PermPoolScalableBloomFilter(initial_capacity=200_000, target_fp_rate=0.01) as bf_seq:
+    with PermPoolScalableBloomFilter(initial_capacity=INIT_CAP, target_fp_rate=0.01) as bf_seq:
         seq_processor = StreamProcessor(bf_seq, batch_size=BATCH_SIZE)
 
         # Wall-Clock and CPU Time
@@ -74,7 +75,7 @@ async def run_stress_test(mode: str):
     # TEST 2: ASYNC PARALLEL PROCESSOR (State-of-the-Art Producer-Consumer)
     print("\n[TEST 2] Executing Asynchronous Parallel Orchestration (Producer-Consumer)...")
 
-    with PermPoolScalableBloomFilter(initial_capacity=200_000, target_fp_rate=0.01) as bf_async:
+    with PermPoolScalableBloomFilter(initial_capacity=INIT_CAP, target_fp_rate=0.01) as bf_async:
         async_processor = AsyncParallelStreamProcessor(bf_async, batch_size=BATCH_SIZE)
 
         # Wall-Clock and CPU Time
