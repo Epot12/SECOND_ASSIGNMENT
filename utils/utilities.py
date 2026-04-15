@@ -79,9 +79,17 @@ def load_data(mode, ins, tst):
         print(f"[SYSTEM] Pre-loading {ins + tst} REAL items from disk...")
         data_path = os.path.join(parent_dir, "DATA", "common_crawl_FULL.txt")
         all_items = []
-        with open(data_path, 'r', encoding='utf-8') as f:
-            for _ in range(ins + tst):
-                line = f.readline()
-                if not line: break
-                all_items.append(line.strip())
+
+        try:
+            with open(data_path, 'r', encoding='utf-8') as f:
+                for _ in range(ins + tst):
+                    line = f.readline()
+                    if not line: break
+                    all_items.append(line.strip())
+        except FileNotFoundError:
+            print(f"\n[CRITICAL ERROR] Real dataset not found!")
+            print(f"Expected path: {data_path}")
+            print("Please ensure the dataset is extracted correctly.")
+            sys.exit(1)
+
         return all_items[:ins], all_items[ins:ins + tst]
