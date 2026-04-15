@@ -2,33 +2,27 @@ import os
 import sys
 import subprocess
 import json
-
+from pathlib import Path
 
 def run_command(command: list[str], description: str, cwd: str):
-    print(f"\n[ORCHESTRATOR] {description}")
+    print(f"\n[SUB-ORCHESTRATOR] {description}")
     try:
-        # cwd enforces execution in project root
         subprocess.run(command, check=True, cwd=cwd)
     except subprocess.CalledProcessError:
         print(f"\n[CRITICAL ERROR] Execution failed: {' '.join(command)}")
         sys.exit(1)
 
-
-def print_report(gil_data, nogil_data):
+def print_report(gil_data, nogil_data, mode_name):
     print("\n" + "=" * 85)
-    print("SCIENTIFIC BENCHMARK REPORT: SCALABLE BLOOM FILTERS")
+    print(f"SCIENTIFIC BENCHMARK REPORT: {mode_name.upper()} WORKLOAD")
     print("=" * 85)
-
     all_results = {**gil_data, **nogil_data}
 
-    # table with also CPU metrics
     print(f"{'Architecture':<25} | {'Wall: Ins (s)':<13} | {'Wall: Query':<11} | {'CPU: Ins (s)':<12} | {'CPU: Query':<12}")
     print("-" * 85)
-
     seq_tot = all_results['Sequential']['ins'] + all_results['Sequential']['read']
 
     for name, metrics in all_results.items():
-
         cpu_ins = metrics.get('ins_cpu', 0.0)
         cpu_read = metrics.get('read_cpu', 0.0)
         print(f"{name:<25} | {metrics['ins']:<13.2f} | {metrics['read']:<11.2f} | {cpu_ins:<12.2f} | {cpu_read:<12.2f}")
@@ -36,111 +30,52 @@ def print_report(gil_data, nogil_data):
     print("\n" + "=" * 85)
     print("MICRO-ARCHITECTURAL SPEEDUP ANALYSIS (vs Sequential)")
     print("=" * 85)
-
     for name, metrics in all_results.items():
         if name == 'Sequential': continue
         tot = metrics['ins'] + metrics['read']
         speedup = seq_tot / tot if tot > 0 else 0
         print(f" -> {name:<22} : {speedup:.2f}x faster globally (Wall-Clock)")
 
-    # Deep architectural insights
-    sota_ins = all_results['SotaIPC']['ins']
-    thread_ins = all_results['NativeThreads']['ins']
-
-    print("\n[RESEARCH INSIGHTS]")
-    print(f"1. IPC vs No-Old_GIL Memory Access:")
-    if thread_ins < sota_ins:
-        print(
-            f"   Native Free-Threading is {(sota_ins / thread_ins):.2f}x faster in allocation than IPC Shared Memory.")
-    else:
-        print(
-            f"   Multiprocessing IPC outperforms No-Old_GIL threading by {(thread_ins / sota_ins):.2f}x in this workload.")
     print("=================================================================\n")
 
-
-def check_file_exists(filepath: str, role: str):
-    """Checks if the file exists and stops the program with a clear error if it is missing."""
-    if not os.path.exists(filepath):
-        print(f"\n[DIAGNOSTIC ERROR] Fundamental file missing: ({role})!")
-        print(f"Searching here: {filepath}")
-        sys.exit(1)
-
-
 def main():
-    # Determine the project root (parent of the BENCHMARKS folder)
-    current_dir = os.path.dirname(os.path.abspath(__file__))  # SYNTHETIC_DATA
-    bench_dir = os.path.dirname(current_dir)  # BENCHMARKS
-    base_dir = os.path.dirname(bench_dir)  # SECOND_ASSIGNMENT
+    current_dir = Path(__file__).parent.resolve() # BENCHMARKS
+    base_dir = current_dir.parent                 # SECOND_ASSIGNMENT
 
-    print(f"[SYSTEM] Project Root Directory: {base_dir}")
-
-    # SETUP Old_GIL ENVIRONMENT
-    path_gil_venv = os.path.join(base_dir, ".venv-gil")
-    if not os.path.exists(path_gil_venv):
-        run_command(["uv", "venv", ".venv-gil", "--python", "3.12"],
-                    "Creating Old_GIL Environment...", base_dir)
-    else:
-        print("\n[ORCHESTRATOR] Old_GIL Environment already exists. Skipping creation.")
-
-    run_command(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "bitarray"], "Ensuring Old_GIL dependencies...", base_dir)
-
-    # SETUP NO-Old_GIL ENVIRONMENT
-
-    path_nogil_venv = os.path.join(base_dir, ".venv-nogil")
-    if not os.path.exists(path_nogil_venv):
-        run_command(["uv", "venv", ".venv-nogil", "--python", "3.13t"],
-                    "Creating No-Old_GIL Environment...", base_dir)
-    else:
-        print("\n[ORCHESTRATOR] No-Old_GIL Environment already exists. Skipping creation.")
-
-    # 2. Installiamo TUTTO (incluso numpy) nell'ambiente appena confermato
-    run_command(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
-                "Ensuring No-Old_GIL dependencies...", base_dir)
-
-    # solving executables and script
+    # finding executables
     is_windows = os.name == 'nt'
     bin_dir = "Scripts" if is_windows else "bin"
     exe = ".exe" if is_windows else ""
 
-    # Python Old_GIL path
-    python_gil = os.path.join(base_dir, ".venv-gil", bin_dir, f"python{exe}")
+    python_gil = base_dir / ".venv-gil" / bin_dir / f"python{exe}"
+    python_nogil_t = base_dir / ".venv-nogil" / bin_dir / f"python3.13t{exe}"
+    python_nogil_std = base_dir / ".venv-nogil" / bin_dir / f"python{exe}"
+    python_nogil = python_nogil_t if python_nogil_t.exists() else python_nogil_std
 
-    # Python No-Old_GIL path
-    python_nogil_std = os.path.join(base_dir, ".venv-nogil", bin_dir, f"python{exe}")
-    python_nogil_t = os.path.join(base_dir, ".venv-nogil", bin_dir, f"python3.13t{exe}")
-    python_nogil = python_nogil_t if os.path.exists(python_nogil_t) else python_nogil_std
-
-    # benchmark scripts paths
-    script_gil = os.path.join(current_dir, "bench_gil.py")
-    script_nogil = os.path.join(current_dir, "bench_nogil.py")
-
-    #check
-    check_file_exists(python_gil, "Python Old_GIL Interpreter")
-    check_file_exists(script_gil, "Benchmark Old_GIL Script")
-    check_file_exists(python_nogil, "Python No-Old_GIL Interpreter")
-    check_file_exists(script_nogil, "Benchmark No-Old_GIL Script")
-
-    # execution
-    run_command([python_gil, script_gil], "Executing Old_GIL Workloads (Tests 1-4)...", base_dir)
-    run_command([python_nogil, script_nogil], "Executing No-Old_GIL Workloads (Tests 5-6)...", base_dir)
-
-    # REPORTING
-    gil_json = os.path.join(current_dir, 'telemetry_gil.json')
-    nogil_json = os.path.join(current_dir, 'telemetry_nogil.json')
-
-    check_file_exists(gil_json, "Telemetry JSON (Old_GIL)")
-    check_file_exists(nogil_json, "Telemetry JSON (No-Old_GIL)")
-
-    with open(gil_json, 'r') as f:
-        gil_data = json.load(f)
-    with open(nogil_json, 'r') as f:
-        nogil_data = json.load(f)
-
-    print_report(gil_data, nogil_data)
+    script_gil = current_dir / "bench_gil.py"
+    script_nogil = current_dir / "bench_nogil.py"
 
 
-    os.remove(gil_json)
-    os.remove(nogil_json)
+    # Execution
+
+    run_command([str(python_gil), str(script_gil), "--mode", "synthetic"], "Running GIL Worker (Synthetic)", current_dir)
+    run_command([str(python_nogil), str(script_nogil), "--mode", "synthetic"], "Running No-GIL Worker (Synthetic)", current_dir)
+
+    with open(current_dir / 'telemetry_gil_synthetic.json', 'r') as f: gil_synth = json.load(f)
+    with open(current_dir / 'telemetry_nogil_synthetic.json', 'r') as f: nogil_synth = json.load(f)
+    print_report(gil_synth, nogil_synth, "Synthetic")
+
+
+    # Real execution
+
+    run_command([str(python_gil), str(script_gil), "--mode", "real"], "Running GIL Worker (Real)", current_dir)
+    run_command([str(python_nogil), str(script_nogil), "--mode", "real"], "Running No-GIL Worker (Real)", current_dir)
+
+    with open(current_dir / 'telemetry_gil_real.json', 'r') as f: gil_real = json.load(f)
+    with open(current_dir / 'telemetry_nogil_real.json', 'r') as f: nogil_real = json.load(f)
+    print_report(gil_real, nogil_real, "Real Data")
+
+    # json are left for general main
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,8 @@
 import os
 import json
 import seaborn as sns
+import matplotlib.pyplot as plt
+from pathlib import Path
 from utils.utilities import *
 
 
@@ -42,6 +44,22 @@ def main():
         print("\n[HALT] Dataset integrity check failed. Please ensure the file is correctly")
         print("       downloaded from CC-MAIN-2024-10 and extracted in the DATA folder.")
         sys.exit(1)
+
+    print("\n[SYSTEM] Verifying Virtual Environments...")
+
+    path_gil_venv = root_dir / ".venv-gil"
+    if not path_gil_venv.exists():
+        print("[SYSTEM] Creating GIL Environment...")
+        subprocess.run(["uv", "venv", ".venv-gil", "--python", "3.12"], cwd=root_dir, check=True)
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "bitarray"], cwd=root_dir,
+                       check=True)
+
+    path_nogil_venv = root_dir / ".venv-nogil"
+    if not path_nogil_venv.exists():
+        print("[SYSTEM] Creating No-GIL Environment...")
+        subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True)
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
+                       cwd=root_dir, check=True)
 
     is_windows = os.name == 'nt'
     bin_dir = "Scripts" if is_windows else "bin"
