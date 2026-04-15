@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import multiprocessing as mp
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -59,4 +60,5 @@ def run():
     print(f"\n[SCALING WORKER] All scaling telemetry saved to {out_path}")
 
 if __name__ == "__main__":
+    mp.freeze_support()
     run()

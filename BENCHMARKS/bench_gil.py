@@ -91,7 +91,7 @@ def run(mode):
         results[name] = {'ins': si['mean'], 'read': sr['mean'], 'ins_cpu': sic['mean'], 'read_cpu': src['mean']}
 
     # Export
-    out_path = os.path.join(current_dir, 'telemetry_gil.json')
+    out_path = os.path.join(current_dir, f'telemetry_gil_{mode}.json')
     with open(out_path, 'w') as f:
         json.dump(results, f, indent=4)
 

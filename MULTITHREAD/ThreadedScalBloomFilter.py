@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 def _thread_add_chunk(args):
     """
     Lock-Free execution within the same memory space.
-    On Free-Threaded Python (No-GIL)
+    On Free-Threaded Python (No-Old_GIL)
     """
     buf, m, k, items = args
 
@@ -61,7 +61,7 @@ def _thread_contains_chunk(args):
 
 class ThreadedScalableBloomFilter:
     """
-    Implementation for Free-Threaded (No-GIL) Python.
+    Implementation for Free-Threaded (No-Old_GIL) Python.
     Uses concurrent.futures.ThreadPoolExecutor for zero-copy, zero-IPC concurrency.
     """
 
@@ -96,7 +96,7 @@ class ThreadedScalableBloomFilter:
     def _calibrate_threshold(self):
         """
         Hardware auto-tuning for ThreadPool dispatch overhead.
-        Calculates the break-even point for No-GIL threading.
+        Calculates the break-even point for No-Old_GIL threading.
         """
         print("[THREAD-SYSTEM] Hardware calibration for Native Threads...")
 

@@ -25,7 +25,7 @@ def network_stream(total_items):
 # STRESS TEST ROUTINE
 async def run_stress_test():
     TOTAL_ITEMS = 3_000_000  # One million elements to impose significant load on RAM and CPU
-    BATCH_SIZE = 50_000  # Large enough to justify the overhead of No-GIL Thread dispatching
+    BATCH_SIZE = 50_000  # Large enough to justify the overhead of No-Old_GIL Thread dispatching
 
     print("=" * 60)
     print(f"[INFO] INITIATING STRESS TEST: {TOTAL_ITEMS} elements")
@@ -86,7 +86,7 @@ async def run_stress_test():
         print("occurred with perfect temporal overlap, maximizing system resource utilization.")
     else:
         print("[ANALYSIS] Execution times are comparable. This outcome indicates either an absolute")
-        print("CPU bottleneck or the presence of an active Global Interpreter Lock (GIL),")
+        print("CPU bottleneck or the presence of an active Global Interpreter Lock (Old_GIL),")
         print("which is typical in standard Python environments (<= 3.12).")
 
 

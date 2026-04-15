@@ -134,8 +134,8 @@ def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
 
     # Define professional color palette and academic labels for the evaluated architectures
     colors = {"Amdahl_NoGIL_Map_Red": "#4C72B0", "Amdahl_NoGIL_Mul_Thr": "#55A868", "Amdahl_IPC": "#C44E52"}
-    labels = {"Amdahl_NoGIL_Map_Red": "No-GIL (Optimized Map-Reduce)",
-              "Amdahl_NoGIL_Mul_Thr": "No-GIL (Standard Multi-Threading)",
+    labels = {"Amdahl_NoGIL_Map_Red": "No-Old_GIL (Optimized Map-Reduce)",
+              "Amdahl_NoGIL_Mul_Thr": "No-Old_GIL (Standard Multi-Threading)",
               "Amdahl_IPC": "Multiprocessing (IPC Shared Memory)"}
 
     max_cores = 1
@@ -185,8 +185,8 @@ def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.4)
     fig, ax = plt.subplots(figsize=(10, 6))
     palette = {"Gustafson_NoGIL_Map_Red": "#4C72B0", "Gustafson_NoGIL_Mul_Thr": "#55A868", "Gustafson_IPC": "#C44E52"}
-    labels = {"Gustafson_NoGIL_Map_Red": "No-GIL (Optimized Map-Reduce)",
-              "Gustafson_NoGIL_Mul_Thr": "No-GIL (Standard Multi-Threading)",
+    labels = {"Gustafson_NoGIL_Map_Red": "No-Old_GIL (Optimized Map-Reduce)",
+              "Gustafson_NoGIL_Mul_Thr": "No-Old_GIL (Standard Multi-Threading)",
               "Gustafson_IPC": "Multiprocessing (IPC Shared Memory)"}
 
     max_cores = 1

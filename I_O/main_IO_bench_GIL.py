@@ -85,7 +85,7 @@ async def run_stress_test():
         print(f"[ANALYSIS] The Asynchronous implementation achieved a {speedup:.2f}x speedup.")
         print("Rationale: Network ingestion (I/O) and hash computation (CPU via Multiprocessing)")
         print("occurred with perfect temporal overlap. By delegating the CPU-bound workload to a")
-        print("Persistent Process Pool via Shared Memory, the system successfully bypassed the GIL,")
+        print("Persistent Process Pool via Shared Memory, the system successfully bypassed the Old_GIL,")
         print("maximizing both I/O throughput and multi-core resource utilization.")
     else:
         print("[ANALYSIS] Execution times are comparable. This outcome may indicate an absolute")

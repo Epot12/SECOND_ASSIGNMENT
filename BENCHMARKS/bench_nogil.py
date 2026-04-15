@@ -2,6 +2,7 @@ import os, sys, time, json
 import gc
 import argparse
 from utils.stats_engine import compute_statistics, TOTAL_RUNS, WARMUP_RUNS
+from utils.utilities import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -10,8 +11,6 @@ sys.path.insert(0, parent_dir)
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
 
-
-# (Inserisci qui la funzione load_data identica a sopra)
 
 def run(mode):
     print(f"\n[NOGIL-WORKER] Starting No-GIL Benchmarks (Mode: {mode})...")
@@ -38,9 +37,9 @@ def run(mode):
                 gc.enable()
 
                 if run_idx >= WARMUP_RUNS:
-                    ins_times.append(t1 - t0);
+                    ins_times.append(t1 - t0)
                     read_times.append(t2 - t1)
-                    ins_cpu_times.append(t1c - t0c);
+                    ins_cpu_times.append(t1c - t0c)
                     read_cpu_times.append(t2c - t1c)
 
         si, sr = compute_statistics(ins_times), compute_statistics(read_times)
