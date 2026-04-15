@@ -1,12 +1,12 @@
-import os
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
-from pathlib import Path
 from utils.utilities import *
+from utils.plot_functions import *
 
+# GENERAL MAIN: THE GRAND ORCHESTRATOR
+#this file is the entry point of the entire project
 
-# GENERAL MAIN TO AUTOMATE ALL THE PIPELINE OF EXPERIMENTS
 
 print("[SYSTEM] Forcing deterministic behavior (PYTHONHASHSEED=0)...")
 os.environ["PYTHONHASHSEED"] = "0"
@@ -20,7 +20,18 @@ plt.rcParams['font.family'] = 'serif'
 plt.rcParams['pdf.fonttype'] = 42  # Ensures fonts are embedded in the PDF
 
 
-# ORCHESTRATION LOGIC
+def run_sub_process(command: list[str], description: str, cwd: Path):
+    """Helper to run sub-orchestrators and stream their output in real-time."""
+    print(f"\n{'=' * 70}")
+    print(f"[GRAND ORCHESTRATOR] {description}")
+    print(f"{'=' * 70}")
+    try:
+        # the colored/formatted output flows directly into the terminal
+        subprocess.run(command, check=True, cwd=cwd)
+    except subprocess.CalledProcessError:
+        print(f"\n[CRITICAL ERROR] Pipeline halted during: {description}")
+        sys.exit(1)
+
 
 def main():
     root_dir = Path(__file__).parent.resolve()
@@ -28,15 +39,17 @@ def main():
     outputs_dir = root_dir / "Outputs"
     plots_dir = outputs_dir / "Plots"
     tables_dir = outputs_dir / "Tables"
+    bench_dir = root_dir / "BENCHMARKS"
+    io_dir = root_dir / "I_O"
 
-    print("=" * 70)
-    print(" GENERAL MAIN ")
-    print("=" * 70)
+    print("=" * 80)
+    print(" " * 25 + "PIPELINE EXECUTIVE" + " " * 25)
+    print("=" * 80)
 
     # 1. Setup Directories
     plots_dir.mkdir(parents=True, exist_ok=True)
     tables_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[SYSTEM] Output directories verified at: {outputs_dir}")
+    print(f"[SYSTEM] Output directories verified at: {outputs_dir.name}")
 
     # 2. Dataset Verification
     dataset_path = data_dir / DATASET_FILE
@@ -45,8 +58,8 @@ def main():
         print("       downloaded from CC-MAIN-2024-10 and extracted in the DATA folder.")
         sys.exit(1)
 
+    # 3. Virtual Environments Setup
     print("\n[SYSTEM] Verifying Virtual Environments...")
-
     path_gil_venv = root_dir / ".venv-gil"
     if not path_gil_venv.exists():
         print("[SYSTEM] Creating GIL Environment...")
@@ -61,77 +74,61 @@ def main():
         subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
                        cwd=root_dir, check=True)
 
+    # Resolving Interpreters
     is_windows = os.name == 'nt'
     bin_dir = "Scripts" if is_windows else "bin"
     exe = ".exe" if is_windows else ""
 
-    python_gil = root_dir / ".venv-gil" / bin_dir / f"python{exe}"
-
-    python_nogil_t = root_dir / ".venv-nogil" / bin_dir / f"python3.13t{exe}"
-    python_nogil_std = root_dir / ".venv-nogil" / bin_dir / f"python{exe}"
+    python_gil = path_gil_venv / bin_dir / f"python{exe}"
+    python_nogil_t = path_nogil_venv / bin_dir / f"python3.13t{exe}"
+    python_nogil_std = path_nogil_venv / bin_dir / f"python{exe}"
     python_nogil = python_nogil_t if python_nogil_t.exists() else python_nogil_std
 
-    # 3. Execution of Base Benchmarks
-    print("\n[ORCHESTRATOR] Delegating base benchmarks to Master Orchestrator...")
-    sub_orchestrator = root_dir / "BENCHMARKS" / "master_orchestrator.py"
 
-    if sub_orchestrator.exists():
-        run_and_capture([str(python_gil), str(sub_orchestrator)],
-                        "Running Base Architecture Benchmarks...", root_dir)
+    # PHASE 1: TASK DELEGATION
+
+    # A. Base Architecture Benchmarks
+    master_orch = bench_dir / "master_orchestrator.py"
+    if master_orch.exists():
+        run_sub_process([str(python_gil), str(master_orch)], "DELEGATING TO MASTER ORCHESTRATOR", root_dir)
     else:
-        print(f"[CRITICAL] Sub-Orchestrator not found at {sub_orchestrator}")
+        print(f"[CRITICAL] Master Orchestrator not found at {master_orch}")
         sys.exit(1)
 
-    # 4. Execution of I/O Stress Tests
-
-    io_scripts = {
-        "Synth_GIL_IPC": root_dir / "I_O" / "main_IO_bench_GIL.py",
-        "Synth_NOGIL": root_dir / "I_O" / "main_IO_bench_NO_GIL.py",
-        "Real_GIL_IPC": root_dir / "I_O" / "Real_main_IO_bench_GIL.py",
-        "Real_NOGIL": root_dir / "I_O" / "Real_main_IO_bench_NO_GIL.py"
-    }
-
-    io_results = {}
-    for name, script_path in io_scripts.items():
-        if script_path.exists():
-            interpreter = str(python_nogil) if "NO_GIL" in name else str(python_gil)
-            stdout = run_and_capture([interpreter, str(script_path)], f"Running I/O Test: {name}", root_dir)
-            io_results[name] = parse_io_metrics(stdout)
-        else:
-            print(f"[WARNING] I/O Script not found: {script_path.name}. Skipping.")
-
-    # 4.5 Execution of Scaling Tests (Amdahl's Law etc)
-    print("\n[ORCHESTRATOR] Initiating Amdahl's Law Scaling Analysis...")
-    script_scal = root_dir / "BENCHMARKS" / "bench_script.py"
-    scal_results = {}
-
-    if script_scal.exists():
-        # Running the script using python_nogil
-        run_and_capture([str(python_nogil), str(script_scal)], "Running scaling Benchmarks...", root_dir)
-
-
-        scal_json = root_dir / "BENCHMARKS" / "telemetry_bench_script.json"
-        if scal_json.exists():
-            with open(scal_json, 'r') as f:
-                scal_results = json.load(f)
-            os.remove(scal_json)  # cleaning temporary file
+    # B. I/O Stress Tests
+    io_orch = io_dir / "io_orchestrator.py"
+    if io_orch.exists():
+        run_sub_process([str(python_gil), str(io_orch)], "DELEGATING TO I/O ORCHESTRATOR", root_dir)
     else:
-        print(f"[WARNING] Amdahl Script not found: {script_scal.name}. Skipping.")
+        print(f"[CRITICAL] I/O Orchestrator not found at {io_orch}")
+        sys.exit(1)
 
-    # 5. Data Aggregation and Storage (For LaTeX/Word Tables)
-    print("\n[DATA EXPORT] Aggregating telemetry for Tables...")
-    bench_dir = root_dir / "BENCHMARKS"
+    # C. Scaling Tests (Amdahl's Law)
+    script_scal = bench_dir / "bench_script.py"
+    if script_scal.exists():
+        run_sub_process([str(python_nogil), str(script_scal)], "RUNNING SCALING LAWS ANALYSIS", root_dir)
+    else:
+        print(f"[WARNING] Scaling Script not found at {script_scal}. Skipping.")
 
-    # Reading files with names generated by parametric mode
-    with open(bench_dir / "telemetry_gil_synthetic.json", 'r') as f:
-        synth_gil = json.load(f)
-    with open(bench_dir / "telemetry_nogil_synthetic.json", 'r') as f:
-        synth_nogil = json.load(f)
+    # PHASE 2: DATA AGGREGATION
 
-    with open(bench_dir / "telemetry_gil_real.json", 'r') as f:
-        real_gil = json.load(f)
-    with open(bench_dir / "telemetry_nogil_real.json", 'r') as f:
-        real_nogil = json.load(f)
+    print("\n[DATA EXPORT] Aggregating telemetry from all subsystems...")
+
+    def load_json_safe(path: Path) -> dict:
+        if path.exists():
+            with open(path, 'r') as f:
+                return json.load(f)
+        return {}
+
+    # Load Base Benchmarks
+    synth_gil = load_json_safe(bench_dir / "telemetry_gil_synthetic.json")
+    synth_nogil = load_json_safe(bench_dir / "telemetry_nogil_synthetic.json")
+    real_gil = load_json_safe(bench_dir / "telemetry_gil_real.json")
+    real_nogil = load_json_safe(bench_dir / "telemetry_nogil_real.json")
+
+    # Load I/O and Scaling
+    io_results = load_json_safe(io_dir / "telemetry_io.json")
+    scal_results = load_json_safe(bench_dir / "telemetry_bench_script.json")
 
     synth_all = {**synth_gil, **synth_nogil}
     real_all = {**real_gil, **real_nogil}
@@ -146,26 +143,46 @@ def main():
     tables_file = tables_dir / "Aggregated_Benchmark_Tables.json"
     with open(tables_file, 'w') as f:
         json.dump(aggregated_tables, f, indent=4)
-    print(f"[DATA EXPORT] Raw table data saved to {tables_file}")
+    print(f"[DATA EXPORT] Aggregated Master Table saved to: {tables_file.name}")
 
-    # 6. Plot Generation
+
+    # PHASE 3: GARBAGE COLLECTION (CLEANUP)
+
+    print("\n[CLEANUP] Removing intermediate JSON telemetry files...")
+
+    temp_files = [
+        bench_dir / "telemetry_gil_synthetic.json",
+        bench_dir / "telemetry_nogil_synthetic.json",
+        bench_dir / "telemetry_gil_real.json",
+        bench_dir / "telemetry_nogil_real.json",
+        bench_dir / "telemetry_bench_script.json",
+        io_dir / "telemetry_io.json"
+    ]
+
+    cleanup_count = 0
+    for temp_file in temp_files:
+        if temp_file.exists():
+            temp_file.unlink()
+            cleanup_count += 1
+
+    print(f"[CLEANUP] Workspace is clean. Removed {cleanup_count} temporary files.")
+
+
+    # PHASE 4: PLOT GENERATION
+
     generate_plots(synth_all, real_all, io_results, plots_dir)
 
-    # drawing scaling plots if data exist
     if scal_results:
-        # passing only specific sections to related functions
         if "Amdahl" in scal_results:
             plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
-
         if "Gustafson" in scal_results:
             plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
-
         if "Granularity" in scal_results:
             plot_chunk_optimization(scal_results["Granularity"], plots_dir)
 
-    print("\n" + "=" * 70)
-    print(" ORCHESTRATION COMPLETE. ALL DATA SECURED.")
-    print("=" * 70)
+    print("\n" + "=" * 80)
+    print(" ORCHESTRATION COMPLETE. ALL DATA SECURED. PDFS GENERATED.")
+    print("=" * 80)
 
 
 if __name__ == "__main__":
