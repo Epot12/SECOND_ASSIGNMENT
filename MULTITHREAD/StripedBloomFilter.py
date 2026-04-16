@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 def _worker_add_striped(args):
     """Performs massive writing in the relevant stripe."""
     stripe_buf, m_stripe, k, items = args
-    if items.size == 0: return
+    if len(items) == 0: return
 
     indices = []
     for item in items:
@@ -35,7 +35,7 @@ def _worker_add_striped(args):
 def _worker_contains_striped(args):
     """Performs a massive search in the corresponding stripes of all layers."""
     stripes_per_layer, m_stripe, k_list, items, original_indices = args
-    if items.size == 0: return [], []
+    if len(items) == 0: return [], []
 
     results = []
     for item in items:
@@ -104,21 +104,24 @@ class StripedBloomFilter:
             self._add_new_layer()
             layer = self.layers[-1]
 
-
-        items_np = np.array(items)
         routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
         stripe_ids = np.mod(routing_hashes, self.num_threads)
 
         jobs = []
         for i in range(self.num_threads):
-            jobs.append((layer['stripes'][i], layer['m_stripe'], layer['k'], items_np[stripe_ids == i]))
+            # extracting the numeric indices where the stripe_id corresponds to 'i'
+            stripe_indices = np.nonzero(stripe_ids == i)[0]
+
+            # drawing the elements from the original Python list
+            items_for_stripe = [items[idx] for idx in stripe_indices]
+
+            jobs.append((layer['stripes'][i], layer['m_stripe'], layer['k'], items_for_stripe))
 
         list(self.executor.map(_worker_add_striped, jobs))
         layer['count'] += len(items)
 
     def contains_batch(self, items: list) -> list[bool]:
-        items_np = np.array(items)
-        # creating an array of indices to reconstruct the order at the end
+
         orig_idx_np = np.arange(len(items))
 
         routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
@@ -129,10 +132,14 @@ class StripedBloomFilter:
         k_list = [l['k'] for l in self.layers]
 
         for i in range(self.num_threads):
-            # passing to the worker the list of all the stripes corresponding to its ID
             stripes_per_id = [l['stripes'][i] for l in self.layers]
-            mask = (stripe_ids == i)
-            jobs.append((stripes_per_id, m_stripe, k_list, items_np[mask], orig_idx_np[mask]))
+
+            # extracting indices and filtering
+            stripe_indices = np.nonzero(stripe_ids == i)[0]
+            items_for_stripe = [items[idx] for idx in stripe_indices]
+            orig_idx_for_stripe = orig_idx_np[stripe_indices]
+
+            jobs.append((stripes_per_id, m_stripe, k_list, items_for_stripe, orig_idx_for_stripe))
 
         # MAP phase
         worker_results = list(self.executor.map(_worker_contains_striped, jobs))

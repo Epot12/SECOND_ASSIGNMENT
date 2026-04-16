@@ -58,7 +58,7 @@ def main():
 
     # Execution
 
-    run_command([str(python_gil), str(script_gil), "--mode", "synthetic"], "Running GIL Worker (Synthetic)", current_dir)
+    #run_command([str(python_gil), str(script_gil), "--mode", "synthetic"], "Running GIL Worker (Synthetic)", current_dir)
     run_command([str(python_nogil), str(script_nogil), "--mode", "synthetic"], "Running No-GIL Worker (Synthetic)", current_dir)
 
     with open(current_dir / 'telemetry_gil_synthetic.json', 'r') as f: gil_synth = json.load(f)
@@ -68,7 +68,7 @@ def main():
 
     # Real execution
 
-    run_command([str(python_gil), str(script_gil), "--mode", "real"], "Running GIL Worker (Real)", current_dir)
+    #run_command([str(python_gil), str(script_gil), "--mode", "real"], "Running GIL Worker (Real)", current_dir)
     run_command([str(python_nogil), str(script_nogil), "--mode", "real"], "Running No-GIL Worker (Real)", current_dir)
 
     with open(current_dir / 'telemetry_gil_real.json', 'r') as f: gil_real = json.load(f)
