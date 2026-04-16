@@ -9,13 +9,16 @@ def run_benchmark(target_script: Path, mode: str):
     print(f"Start of automatic execution: MODE [{mode.upper()}]")
     print("=" * 80 + "\n")
 
-    # using sys.executable to ensure that the subprocess uses the SAME
-    # Python interpreter (e.g. python3.13t No-GIL) with which this orchestrator has been launched.
+    project_root = str(target_script.parent.parent.parent)
+
+    env = os.environ.copy()
+
+    env["PYTHONPATH"] = project_root + os.pathsep + env.get("PYTHONPATH", "")
+
     command = [sys.executable, str(target_script), "--mode", mode]
 
     try:
-        # executing command
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, env=env)
     except subprocess.CalledProcessError as e:
         print(f"\n[CRITICAL ERROR] Benchmark for mode '{mode}' failed with code {e.returncode}.")
         sys.exit(1)

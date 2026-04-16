@@ -11,8 +11,10 @@ from utils.stats_engine import *
 # SETUP PATHS and IMPORTS
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
+multithread_dir = os.path.dirname(current_dir)
+root_dir = os.path.dirname(multithread_dir)
+
+sys.path.insert(0, root_dir)
 
 from utils.utilities import load_data
 
