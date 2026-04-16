@@ -34,7 +34,7 @@ def _worker_add_striped(args):
 
 def _worker_contains_striped(args):
     """Performs a massive search in the corresponding stripes of all layers."""
-    stripes_per_layer, m_stripe, k_list, items, original_indices = args
+    stripes_per_layer, m_stripe_list, k_list, items, original_indices = args
     if len(items) == 0: return [], []
 
     results = []
@@ -43,16 +43,19 @@ def _worker_contains_striped(args):
             item_bytes = item.encode('utf-8')
         elif type(item) is bytes:
             item_bytes = item
-        elif type(item) is int or type(item).__name__.startswith('int'):  # added check for numpy.int
+        elif type(item) is int or type(item).__name__.startswith('int'):
             item_bytes = int(item).to_bytes(8, 'big', signed=True)
         else:
             item_bytes = str(item).encode('utf-8')
+
         h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
         is_present = False
 
         # layer scanning (Locality Principle)
         for layer_idx, stripe_buf in enumerate(stripes_per_layer):
             k = k_list[layer_idx]
+            m_stripe = m_stripe_list[layer_idx] # dynamic dimension for layer
+
             found_in_layer = True
             for i in range(k):
                 if stripe_buf[(h1 + i * h2) % m_stripe] == 0:
@@ -99,52 +102,60 @@ class StripedBloomFilter:
         print(f"[SYSTEM] Layer {depth} Allocated. Stripe: {m_stripe / 1024:.1f} KB (Cache-Friendly)")
 
     def add_batch(self, items: list):
-        layer = self.layers[-1]
-        if layer['count'] >= layer['capacity']:
-            self._add_new_layer()
+        if not items: return
+        total_items = len(items)
+        current_idx = 0
+
+        while current_idx < total_items:
             layer = self.layers[-1]
+            if layer['count'] >= layer['capacity']:
+                self._add_new_layer()
+                layer = self.layers[-1]
 
-        routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
-        stripe_ids = np.mod(routing_hashes, self.num_threads)
+            # calculating how many elements are in this layer
+            available_space = layer['capacity'] - layer['count']
+            end_idx = min(current_idx + available_space, total_items)
+            items_for_this_layer = items[current_idx:end_idx]
 
-        jobs = []
-        for i in range(self.num_threads):
-            # extracting the numeric indices where the stripe_id corresponds to 'i'
-            stripe_indices = np.nonzero(stripe_ids == i)[0]
+            # vectorization
+            routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items_for_this_layer], dtype=np.int32)
+            stripe_ids = np.mod(routing_hashes, self.num_threads)
 
-            # drawing the elements from the original Python list
-            items_for_stripe = [items[idx] for idx in stripe_indices]
+            jobs = []
+            for i in range(self.num_threads):
+                stripe_indices = np.nonzero(stripe_ids == i)[0]
+                items_for_stripe = [items_for_this_layer[idx] for idx in stripe_indices]
+                jobs.append((layer['stripes'][i], layer['m_stripe'], layer['k'], items_for_stripe))
 
-            jobs.append((layer['stripes'][i], layer['m_stripe'], layer['k'], items_for_stripe))
+            list(self.executor.map(_worker_add_striped, jobs))
 
-        list(self.executor.map(_worker_add_striped, jobs))
-        layer['count'] += len(items)
+            # updating the counters to move to the next layer if necessary
+            layer['count'] += len(items_for_this_layer)
+            current_idx = end_idx
 
     def contains_batch(self, items: list) -> list[bool]:
-
+        if not self.layers: return [False] * len(items)
         orig_idx_np = np.arange(len(items))
 
         routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
         stripe_ids = np.mod(routing_hashes, self.num_threads)
 
         jobs = []
-        m_stripe = self.layers[0]['m_stripe']
+
+        m_stripe_list = [l['m_stripe'] for l in self.layers]
         k_list = [l['k'] for l in self.layers]
 
         for i in range(self.num_threads):
             stripes_per_id = [l['stripes'][i] for l in self.layers]
-
-            # extracting indices and filtering
             stripe_indices = np.nonzero(stripe_ids == i)[0]
             items_for_stripe = [items[idx] for idx in stripe_indices]
             orig_idx_for_stripe = orig_idx_np[stripe_indices]
 
-            jobs.append((stripes_per_id, m_stripe, k_list, items_for_stripe, orig_idx_for_stripe))
 
-        # MAP phase
+            jobs.append((stripes_per_id, m_stripe_list, k_list, items_for_stripe, orig_idx_for_stripe))
+
         worker_results = list(self.executor.map(_worker_contains_striped, jobs))
 
-        # Reduce phase
         final_results = [None] * len(items)
         for res_block, idx_block in worker_results:
             for r, idx in zip(res_block, idx_block):
