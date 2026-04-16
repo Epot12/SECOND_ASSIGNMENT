@@ -64,14 +64,14 @@ def main():
     if not path_gil_venv.exists():
         print("[SYSTEM] Creating GIL Environment...")
         subprocess.run(["uv", "venv", ".venv-gil", "--python", "3.12"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "bitarray"], cwd=root_dir,
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "loky", "bitarray"], cwd=root_dir,
                        check=True)
 
     path_nogil_venv = root_dir / ".venv-nogil"
     if not path_nogil_venv.exists():
         print("[SYSTEM] Creating No-GIL Environment...")
         subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "bitarray", "numpy"],
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "loky", "bitarray", "numpy"],
                        cwd=root_dir, check=True)
 
     # Resolving Interpreters
