@@ -118,13 +118,20 @@ def _worker_contains_chunk(args):
 class PermPoolScalableBloomFilter:
     def __init__(self, initial_capacity: int, target_fp_rate: float,
                  tightening_ratio: float = 0.9, growth_factor: int = 2,
-                 num_processes: int = None):
+                 num_processes: int = None, num_threads: int = None):
 
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
         self.tightening_ratio = tightening_ratio
         self.growth_factor = growth_factor
-        self.num_processes = num_processes or mp.cpu_count()
+        # Strict validation: prevent ambiguous inputs
+        if num_threads is not None and num_processes is not None:
+            raise ValueError("[ERROR] Cannot specify both num_threads and num_processes. Choose one. They both refer to the number of processes, there is no"
+                             "multithreading in this class. num_threads has been added just to facilitate adapting")
+
+        # Unifies the interface by accepting both num_processes and num_threads
+        workers = num_threads if num_threads is not None else num_processes
+        self.num_processes = workers or mp.cpu_count()
 
         self.p0 = target_fp_rate * (1 - tightening_ratio)
 
