@@ -8,6 +8,7 @@ from SEQUENTIAL.ScalableBloomFilter import ScalableBloomFilter as SeqBloom
 from PARALLEL.ScalMultProcBloom import ParallelScalableBloomFilter as OnDemandBloom
 from PARALLEL.ScalMultProcBloomOpt import ParallelScalableBloomFilter as LazyBloom
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaBloom
+from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
 from utils.utilities import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +29,8 @@ def run(mode):
         ("Sequential", SeqBloom),
         ("OnDemand", OnDemandBloom),
         ("LazyRestart", LazyBloom),
-        ("SotaIPC", SotaBloom)
+        ("SotaIPC", SotaBloom),
+        ("Joblib", JoblibBloom)
     ]
 
     for name, ArchClass in architectures:
@@ -38,7 +40,7 @@ def run(mode):
 
         for run_idx in range(TOTAL_RUNS):
             # Context manager management for Lazy and Sota
-            if name in ["LazyRestart", "SotaIPC"]:
+            if name in ["LazyRestart", "SotaIPC", "Joblib"]:
                 with ArchClass(cap, fpr) as s:
                     gc.disable()
                     t0, t0c = time.perf_counter(), time.process_time()
@@ -80,9 +82,9 @@ def run(mode):
                 gc.enable()
 
             if run_idx >= WARMUP_RUNS:
-                ins_times.append(t1 - t0);
+                ins_times.append(t1 - t0)
                 read_times.append(t2 - t1)
-                ins_cpu_times.append(t1c - t0c);
+                ins_cpu_times.append(t1c - t0c)
                 read_cpu_times.append(t2c - t1c)
 
         # Statistics and saving
