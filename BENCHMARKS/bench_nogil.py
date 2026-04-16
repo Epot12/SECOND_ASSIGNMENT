@@ -1,4 +1,4 @@
-import os, sys, time, json
+import time, json
 import gc
 import argparse
 from utils.stats_engine import compute_statistics, TOTAL_RUNS, WARMUP_RUNS
@@ -10,7 +10,7 @@ sys.path.insert(0, parent_dir)
 
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
-from MULTITHREAD.StripedBloomFilter import StripedBloomFilter as StripedBloom
+from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter as StripedBloom
 
 
 def run(mode):

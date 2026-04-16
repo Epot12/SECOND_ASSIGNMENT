@@ -4,8 +4,7 @@ import time
 import json
 import gc
 import argparse
-import numpy as np
-from typing import Dict, List, Any
+from typing import Dict, Any
 from utils.stats_engine import *
 
 
@@ -18,9 +17,9 @@ sys.path.insert(0, parent_dir)
 from utils.utilities import load_data
 
 # Importing 3 architectural variables
-from MULTITHREAD.StripedBloomFilter import StripedBloomFilter as StripedBloomBase
-from MULTITHREAD.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
-from MULTITHREAD.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
+from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter as StripedBloomBase
+from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
+from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
 
 
 # CONSTANTS and SCIENTIFIC PARAMETERS
@@ -118,10 +117,10 @@ def run_benchmarks(mode: str):
         c_ins = data['metrics']['insert_cpu']
         c_qry = data['metrics']['query_cpu']
 
-        w_ins_str = f"{w_ins['mean']:.2f}s ± {w_ins['std']:.2f}"
-        w_qry_str = f"{w_qry['mean']:.2f}s ± {w_qry['std']:.2f}"
-        c_ins_str = f"{c_ins['mean']:.2f}s ± {c_ins['std']:.2f}"
-        c_qry_str = f"{c_qry['mean']:.2f}s ± {c_qry['std']:.2f}"
+        w_ins_str = f"{w_ins['mean']:.2f}s ± {w_ins['ci_95_margin']:.2f}"
+        w_qry_str = f"{w_qry['mean']:.2f}s ± {w_qry['ci_95_margin']:.2f}"
+        c_ins_str = f"{c_ins['mean']:.2f}s ± {c_ins['ci_95_margin']:.2f}"
+        c_qry_str = f"{c_qry['mean']:.2f}s ± {c_qry['ci_95_margin']:.2f}"
 
         print(f"{name:<25} | {w_ins_str:<20} | {w_qry_str:<20} | {c_ins_str:<20} | {c_qry_str:<20}")
 
