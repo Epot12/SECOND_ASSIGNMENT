@@ -10,6 +10,7 @@ sys.path.insert(0, parent_dir)
 
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
+from MULTITHREAD.StripedBloomFilter import StripedBloomFilter as StripedBloom
 
 
 def run(mode):
@@ -18,7 +19,7 @@ def run(mode):
     present_items, absent_items = load_data(mode, ins, tst)
     results = {}
 
-    architectures = [("NativeThreads", ThreadBloom), ("MapReduceVectorized", MapReduceBloom)]
+    architectures = [("NativeThreads", ThreadBloom), ("MapReduceVectorized", MapReduceBloom), ("StripedVectorized", StripedBloom)]
 
     for name, ArchClass in architectures:
         print(f" -> Running Test: {name}...")

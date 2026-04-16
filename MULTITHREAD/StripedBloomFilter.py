@@ -15,7 +15,15 @@ def _worker_add_striped(args):
 
     indices = []
     for item in items:
-        h1, h2 = mmh3.hash64(item, seed=42, signed=False)
+        if type(item) is str:
+            item_bytes = item.encode('utf-8')
+        elif type(item) is bytes:
+            item_bytes = item
+        elif type(item) is int or type(item).__name__.startswith('int'):  # added check for numpy.int
+            item_bytes = int(item).to_bytes(8, 'big', signed=True)
+        else:
+            item_bytes = str(item).encode('utf-8')
+        h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
         for i in range(k):
             indices.append((h1 + i * h2) % m_stripe)
 
@@ -31,7 +39,15 @@ def _worker_contains_striped(args):
 
     results = []
     for item in items:
-        h1, h2 = mmh3.hash64(item, seed=42, signed=False)
+        if type(item) is str:
+            item_bytes = item.encode('utf-8')
+        elif type(item) is bytes:
+            item_bytes = item
+        elif type(item) is int or type(item).__name__.startswith('int'):  # added check for numpy.int
+            item_bytes = int(item).to_bytes(8, 'big', signed=True)
+        else:
+            item_bytes = str(item).encode('utf-8')
+        h1, h2 = mmh3.hash64(item_bytes, seed=42, signed=False)
         is_present = False
 
         # layer scanning (Locality Principle)
@@ -54,9 +70,9 @@ def _worker_contains_striped(args):
 # class
 
 
-class UltimateStripedBloomFilter:
+class StripedBloomFilter:
     def __init__(self, initial_capacity: int, target_fp_rate: float, num_threads: int = 4):
-        self.num_threads = num_threads  # Ottimizzato per 4 core fisici
+        self.num_threads = num_threads  # optimized for 4 physical cores
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
         self.p0 = target_fp_rate * 0.1
@@ -68,12 +84,12 @@ class UltimateStripedBloomFilter:
     def _add_new_layer(self):
         depth = len(self.layers)
         cap = self.initial_capacity * (2 ** depth)
-        # Calcolo matematico dimensioni layer
+        # calculating layer dimensions
         m = math.ceil(-(cap * math.log(self.p0)) / (math.log(2) ** 2))
         k = max(1, round((m / cap) * math.log(2)))
 
         m_stripe = math.ceil(m / self.num_threads)
-        # Stripes indipendenti: entrano nella Cache L2!
+        # indipendent stripes: to fill L2 cache
         stripes = [np.zeros(m_stripe, dtype=np.uint8) for _ in range(self.num_threads)]
 
         self.layers.append({
@@ -88,7 +104,7 @@ class UltimateStripedBloomFilter:
             self._add_new_layer()
             layer = self.layers[-1]
 
-        # VETTORIZZAZIONE ROUTING
+
         items_np = np.array(items)
         routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
         stripe_ids = np.mod(routing_hashes, self.num_threads)
@@ -102,7 +118,7 @@ class UltimateStripedBloomFilter:
 
     def contains_batch(self, items: list) -> list[bool]:
         items_np = np.array(items)
-        # Creiamo un array di indici per ricostruire l'ordine alla fine
+        # creating an array of indices to reconstruct the order at the end
         orig_idx_np = np.arange(len(items))
 
         routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
@@ -113,15 +129,15 @@ class UltimateStripedBloomFilter:
         k_list = [l['k'] for l in self.layers]
 
         for i in range(self.num_threads):
-            # Passiamo al worker la lista di tutte le stripes corrispondenti al suo ID
+            # passing to the worker the list of all the stripes corresponding to its ID
             stripes_per_id = [l['stripes'][i] for l in self.layers]
             mask = (stripe_ids == i)
             jobs.append((stripes_per_id, m_stripe, k_list, items_np[mask], orig_idx_np[mask]))
 
-        # Fase di MAP
+        # MAP phase
         worker_results = list(self.executor.map(_worker_contains_striped, jobs))
 
-        # Fase di RECONSTRUCTION (Reduce)
+        # Reduce phase
         final_results = [None] * len(items)
         for res_block, idx_block in worker_results:
             for r, idx in zip(res_block, idx_block):
