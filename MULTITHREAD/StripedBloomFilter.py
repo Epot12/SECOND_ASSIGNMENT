@@ -32,6 +32,10 @@ def _worker_add_striped(args):
     stripe_buf[np_indices] = 1
 
 
+def _worker_calc_routing_hashes(items_chunk):
+    """Computes routing hashes in parallel leveraging No-GIL."""
+    return np.array([mmh3.hash(x, seed=0) for x in items_chunk], dtype=np.int32)
+
 def _worker_contains_striped(args):
     """Performs a massive search in the corresponding stripes of all layers."""
     stripes_per_layer, m_stripe_list, k_list, items, original_indices = args
@@ -117,8 +121,12 @@ class StripedBloomFilter:
             end_idx = min(current_idx + available_space, total_items)
             items_for_this_layer = items[current_idx:end_idx]
 
-            # vectorization
-            routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items_for_this_layer], dtype=np.int32)
+            chunk_size = math.ceil(len(items_for_this_layer) / self.num_threads)
+            item_chunks = [items_for_this_layer[i:i + chunk_size] for i in range(0, len(items_for_this_layer), chunk_size)]
+
+            hash_chunks = list(self.executor.map(_worker_calc_routing_hashes, item_chunks))
+
+            routing_hashes = np.concatenate(hash_chunks)
             stripe_ids = np.mod(routing_hashes, self.num_threads)
 
             jobs = []
@@ -134,10 +142,19 @@ class StripedBloomFilter:
             current_idx = end_idx
 
     def contains_batch(self, items: list) -> list[bool]:
+        if not items: return []
         if not self.layers: return [False] * len(items)
+
         orig_idx_np = np.arange(len(items))
 
-        routing_hashes = np.array([mmh3.hash(x, seed=0) for x in items], dtype=np.int32)
+        # vectorization
+        chunk_size = math.ceil(len(items) / self.num_threads)
+        item_chunks = [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
+
+        hash_chunks = list(self.executor.map(_worker_calc_routing_hashes, item_chunks))
+
+        routing_hashes = np.concatenate(hash_chunks)
+
         stripe_ids = np.mod(routing_hashes, self.num_threads)
 
         jobs = []
@@ -150,7 +167,6 @@ class StripedBloomFilter:
             stripe_indices = np.nonzero(stripe_ids == i)[0]
             items_for_stripe = [items[idx] for idx in stripe_indices]
             orig_idx_for_stripe = orig_idx_np[stripe_indices]
-
 
             jobs.append((stripes_per_id, m_stripe_list, k_list, items_for_stripe, orig_idx_for_stripe))
 
