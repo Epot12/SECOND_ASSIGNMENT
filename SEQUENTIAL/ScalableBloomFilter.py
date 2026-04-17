@@ -15,6 +15,18 @@ class ScalableBloomFilter:
         :param tightening_ratio: How much stiffer each new filter becomes (0.9 = 10% stiffer).
         :param growth_factor: How much the memory grows each time (2 = doubles each time).
         """
+
+        if initial_capacity <= 0:
+            raise ValueError("initial_capacity must be strictly positive.")
+
+        if not (0 < target_fp_rate < 1):
+            raise ValueError("target_fp_rate must be between 0 and 1 (exclusive).")
+
+        if not (0 < tightening_ratio < 1):
+            raise ValueError("tightening_ratio must be between 0 and 1 (exclusive).")
+
+        if growth_factor <= 1:
+            raise ValueError("growth_factor must be strictly greater than 1 to scale.")
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
         self.tightening_ratio = tightening_ratio
