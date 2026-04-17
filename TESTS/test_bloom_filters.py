@@ -5,10 +5,11 @@ import sys
 
 # paths setup
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+parent_dir = os.path.dirname(current_dir)
+sys.path.insert(0, parent_dir)
 
 # importing all classes
-from SEQUENTIAL import ScalableBloomFilter as Sequential
+from SEQUENTIAL.ScalableBloomFilter import ScalableBloomFilter as Sequential
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceNoGIL
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
