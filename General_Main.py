@@ -41,6 +41,7 @@ def main():
     tables_dir = outputs_dir / "Tables"
     bench_dir = root_dir / "BENCHMARKS"
     io_dir = root_dir / "I_O"
+    stripe_dir = root_dir / "MULTITHREAD" / "stripe_strategy"
 
     print("=" * 80)
     print(" " * 25 + "PIPELINE EXECUTIVE" + " " * 25)
@@ -110,6 +111,13 @@ def main():
     else:
         print(f"[WARNING] Scaling Script not found at {script_scal}. Skipping.")
 
+    stripe_orch = stripe_dir / "stripe_orchestrator.py"
+    if stripe_orch.exists():
+        # using No GIL python
+        run_sub_process([str(python_nogil), str(stripe_orch)], "RUNNING STRIPE STRATEGIES ANALYSIS", root_dir)
+    else:
+        print(f"[WARNING] Stripe Orchestrator not found at {stripe_orch}. Skipping.")
+
     # PHASE 2: DATA AGGREGATION
 
     print("\n[DATA EXPORT] Aggregating telemetry from all subsystems...")
@@ -130,8 +138,11 @@ def main():
     io_results = load_json_safe(io_dir / "telemetry_io.json")
     scal_results = load_json_safe(bench_dir / "telemetry_bench_script.json")
 
-    synth_all = {**synth_gil, **synth_nogil}
-    real_all = {**real_gil, **real_nogil}
+    stripe_synth = load_json_safe(stripe_dir / "telemetry_patterns_synthetic.json")
+    stripe_real = load_json_safe(stripe_dir / "telemetry_patterns_real.json")
+
+    synth_all = {**synth_gil, **synth_nogil, **stripe_synth}
+    real_all = {**real_gil, **real_nogil, **stripe_real}
 
     aggregated_tables = {
         "Synthetic_Workloads": synth_all,
@@ -156,7 +167,9 @@ def main():
         bench_dir / "telemetry_gil_real.json",
         bench_dir / "telemetry_nogil_real.json",
         bench_dir / "telemetry_bench_script.json",
-        io_dir / "telemetry_io.json"
+        io_dir / "telemetry_io.json",
+        stripe_dir / "telemetry_patterns_synthetic.json",
+        stripe_dir / "telemetry_patterns_real.json"
     ]
 
     cleanup_count = 0
