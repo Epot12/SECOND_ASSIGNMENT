@@ -2,6 +2,7 @@ import os
 import math
 import mmh3
 import numpy as np
+import multiprocessing as mp
 from joblib import Parallel, delayed
 
 
@@ -86,13 +87,20 @@ class JoblibScalableBloomFilter:
 
     def __init__(self, initial_capacity: int, target_fp_rate: float,
                  tightening_ratio: float = 0.9, growth_factor: int = 2,
-                 n_jobs: int = -1, backend: str = 'loky'):
+                 n_jobs: int = -1, backend: str = 'loky', num_threads: int = None):
 
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
         self.tightening_ratio = tightening_ratio
         self.growth_factor = growth_factor
-        self.n_jobs = n_jobs
+        if num_threads is not None and n_jobs is not None:
+            raise ValueError(
+                "[ERROR] Cannot specify both num_threads and n_jobs. Choose one. They both refer to the number of processes, there is no"
+                "multithreading in this class. num_threads has been added just to facilitate adapting")
+
+        # Unifies the interface by accepting both n_jobs and num_threads
+        workers = num_threads if num_threads is not None else n_jobs
+        self.num_processes = workers or mp.cpu_count()
         self.backend = backend
 
         self.p0 = target_fp_rate * (1 - tightening_ratio)

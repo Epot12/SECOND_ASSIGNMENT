@@ -85,7 +85,7 @@ def _worker_contains_chunk(args):
 # ==========================================
 
 class ParallelBloomFilter:
-    def __init__(self, expected_elements: int, false_positive_rate: float, num_processes: int = None):
+    def __init__(self, expected_elements: int, false_positive_rate: float, num_processes: int = None, num_threads: int = None):
         self.n = expected_elements
         self.p = false_positive_rate
         self.m, self.k = self._calculate_params()
@@ -97,7 +97,14 @@ class ParallelBloomFilter:
         self.elements_count = mp.Value('i', 0)
         self.lock = mp.Lock()
 
-        self.num_processes = num_processes or mp.cpu_count()
+        if num_threads is not None and num_processes is not None:
+            raise ValueError(
+                "[ERROR] Cannot specify both num_threads and num_processes. Choose one. They both refer to the number of processes, there is no"
+                "multithreading in this class. num_threads has been added just to facilitate adapting")
+
+        # Unifies the interface by accepting both num_processes and num_threads
+        workers = num_threads if num_threads is not None else num_processes
+        self.num_processes = workers or mp.cpu_count()
 
     def _calculate_params(self) -> tuple[int, int]:
         m_float = -(self.n * math.log(self.p)) / (math.log(2) ** 2)
