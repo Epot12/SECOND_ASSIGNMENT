@@ -10,6 +10,7 @@ sys.path.insert(0, parent_dir)
 # Importing engine functions
 from utils.scaling_engine import run_strong_scaling, run_weak_scaling, run_chunk_optimization
 
+from SEQUENTIAL import ScalableBloomFilter as Sequential
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceNoGIL
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
@@ -39,6 +40,7 @@ def run():
     # 1. AMDAHL'S LAW (Strong Scaling)
 
     print("\n--- Running Amdahl's Law ---")
+    final_telemetry["Amdahl"]["Amdahl_Sequential"] = run_strong_scaling(Sequential, 1, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_IPC"] = run_strong_scaling(SotaIPC, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_Joblib"] = run_strong_scaling(JoblibBloom, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_ScalParOpt"] = run_strong_scaling(ScalParBloomOpt, max_cores, fixed_size)
