@@ -3,6 +3,8 @@ import sys
 import cProfile
 import pstats
 import time
+import subprocess
+from pathlib import Path
 
 # paths setup
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -71,13 +73,52 @@ def profile_function(func, name):
 
 
 if __name__ == "__main__":
+    # WORKER MODE: If the script receives an argument, it performs only that specific profiling
+    if len(sys.argv) > 1:
+        mode = sys.argv[1]
+        if mode == "sequential":
+            profile_function(run_sequential, "1_Sequential")
+        elif mode == "multiprocessing":
+            profile_function(run_multiprocessing, "2_Multiprocessing")
+        elif mode == "multithreading":
+            profile_function(run_multithreading, "3_Multithreading_SoA")
+        sys.exit(0)
+
+    # MASTER MODE
+    # Finds the interpreters and launches the worker processes.
     print("=" * 60)
-    print(" BLOOM FILTER PROFILING SHOWCASE")
+    print(" BLOOM FILTER PROFILING SHOWCASE (AUTOMATED ORCHESTRATOR)")
     print("=" * 60)
 
-    # Execution and Profiling with cProfile (Macro-Profiling)
-    profile_function(run_sequential, "1_Sequential")
-    profile_function(run_multiprocessing, "2_Multiprocessing")
-    profile_function(run_multithreading, "3_Multithreading_SoA")
+    root_dir = Path(current_dir)
 
-    print("\n[SUCCESS] cProfile analysis complete. Check the .pstat files.")
+    # 1. Resolving Interpreters
+    is_windows = os.name == 'nt'
+    bin_dir = "Scripts" if is_windows else "bin"
+    exe = ".exe" if is_windows else ""
+
+    python_gil = root_dir / ".venv-gil" / bin_dir / f"python{exe}"
+    python_nogil_t = root_dir / ".venv-nogil" / bin_dir / f"python3.13t{exe}"
+    python_nogil_std = root_dir / ".venv-nogil" / bin_dir / f"python{exe}"
+    python_nogil = python_nogil_t if python_nogil_t.exists() else python_nogil_std
+
+    # check that environments exist
+    if not python_gil.exists() or not python_nogil.exists():
+        print("[CRITICAL] Python interpreters could not be found. Make sure venvs exist.")
+        sys.exit(1)
+
+    this_script = str(Path(__file__).resolve())
+
+    # 2. launching the three profiles by delegating to the respective interpreters
+    print("\n[ORCHESTRATOR] Starting Sequential Profiling (GIL)...")
+    subprocess.run([str(python_gil), this_script, "sequential"], check=True)
+
+    print("\n[ORCHESTRATOR] Starting Multiprocessing Profiling (GIL)...")
+    subprocess.run([str(python_gil), this_script, "multiprocessing"], check=True)
+
+    print("\n[ORCHESTRATOR] Starting Multithreading Profiling (NO-GIL)...")
+    subprocess.run([str(python_nogil), this_script, "multithreading"], check=True)
+
+    print("\n" + "=" * 60)
+    print("[SUCCESS] cProfile analysis complete. Check the .pstat files.")
+    print("=" * 60)

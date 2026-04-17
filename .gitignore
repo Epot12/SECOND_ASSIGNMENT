@@ -49,3 +49,7 @@ I_O/telemetry_*.json
 
 # Ignore any file starting with "telemetry_" anywhere in the project
 **/telemetry_*.json
+
+# Profiling files
+*.pstat
+*.lprof
