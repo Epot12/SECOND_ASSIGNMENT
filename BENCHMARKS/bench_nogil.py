@@ -11,6 +11,8 @@ sys.path.insert(0, parent_dir)
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter as StripedBloom
+from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedColMaj
+from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedSoAOpt
 
 
 def run(mode):
@@ -20,7 +22,7 @@ def run(mode):
     results = {}
 
     architectures = [("NativeThreads", ThreadBloom), ("MapReduceVectorized", MapReduceBloom),
-                     ("StripedVectorized", StripedBloom)]
+                     ("StripedVectorized", StripedBloom), ("StripedColMaj", StripedColMaj), ("StripedSoAOpt", StripedSoAOpt)]
 
     for name, ArchClass in architectures:
         print(f" -> Running Test: {name}...")

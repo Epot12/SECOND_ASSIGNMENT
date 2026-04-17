@@ -10,7 +10,7 @@ sys.path.insert(0, parent_dir)
 # Importing engine functions
 from utils.scaling_engine import run_strong_scaling, run_weak_scaling, run_chunk_optimization
 
-from SEQUENTIAL import ScalableBloomFilter as Sequential
+from SEQUENTIAL.ScalableBloomFilter import ScalableBloomFilter as Sequential
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceNoGIL
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
