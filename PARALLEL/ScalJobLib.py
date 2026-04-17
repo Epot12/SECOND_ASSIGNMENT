@@ -100,7 +100,7 @@ class JoblibScalableBloomFilter:
 
         # Unifies the interface by accepting both n_jobs and num_threads
         workers = num_threads if num_threads is not None else n_jobs
-        self.num_processes = workers or mp.cpu_count()
+        self.n_jobs = workers or mp.cpu_count()
         self.backend = backend
 
         self.p0 = target_fp_rate * (1 - tightening_ratio)
