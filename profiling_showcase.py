@@ -51,41 +51,50 @@ def run_multithreading():
         bf.add_batch(DATASET)
 
 
-def profile_function(func, name):
-    """Runs cProfile on the passed function and saves the results to a .pstat file"""
-    profiler = cProfile.Profile()
-
+def profile_function(func, name, use_cprofile=True):
+    """
+    Executes the function. Use cProfile if use_cprofile=True,
+    otherwise it does a pure time benchmark
+    """
     start_time = time.perf_counter()
-    profiler.enable()
 
-    func()
+    if use_cprofile:
+        profiler = cProfile.Profile()
+        profiler.enable()
 
-    profiler.disable()
-    end_time = time.perf_counter()
+        func()
 
-    # Saves .pstat file
-    stats_file = f"{name}_profiler.pstat"
-    with open(stats_file, 'w') as f:
-        stats = pstats.Stats(profiler, stream=f)
-        stats.sort_stats('tottime').print_stats(20)
+        profiler.disable()
+        end_time = time.perf_counter()
 
-    print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. Stats saved to {stats_file}")
+        # saving results
+        stats_file = f"{name}_profiler.pstat"
+        with open(stats_file, 'w') as f:
+            stats = pstats.Stats(profiler, stream=f)
+            stats.sort_stats('tottime').print_stats(20)
+
+        print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. Stats saved to {stats_file}")
+
+    else:
+        # execution without profiler
+        func()
+        end_time = time.perf_counter()
+        print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. (Pure Wall-Clock Time, No Profiler overhead)")
 
 
 if __name__ == "__main__":
-    # WORKER MODE: If the script receives an argument, it performs only that specific profiling
+    # WORKER MODE
     if len(sys.argv) > 1:
         mode = sys.argv[1]
         if mode == "sequential":
-            profile_function(run_sequential, "1_Sequential")
+            profile_function(run_sequential, "1_Sequential", use_cprofile=True)
         elif mode == "multiprocessing":
-            profile_function(run_multiprocessing, "2_Multiprocessing")
+            profile_function(run_multiprocessing, "2_Multiprocessing", use_cprofile=True)
         elif mode == "multithreading":
-            profile_function(run_multithreading, "3_Multithreading_SoA")
+            profile_function(run_multithreading, "3_Multithreading_SoA", use_cprofile=False)
         sys.exit(0)
 
     # MASTER MODE
-    # Finds the interpreters and launches the worker processes.
     print("=" * 60)
     print(" BLOOM FILTER PROFILING SHOWCASE (AUTOMATED ORCHESTRATOR)")
     print("=" * 60)
