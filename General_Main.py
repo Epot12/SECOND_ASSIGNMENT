@@ -10,6 +10,8 @@ from utils.plot_functions import *
 
 print("[SYSTEM] Forcing deterministic behavior (PYTHONHASHSEED=0)...")
 os.environ["PYTHONHASHSEED"] = "0"
+print("[SYSTEM] Setting Orchestrator Flag for sub-processes...")
+os.environ["IS_ORCHESTRATOR"] = "1"
 
 DATASET_FILE = "cdx-00000"
 EXPECTED_SHA256 = "3D9F2F2BAEFF3DB20262B6E5580A8BA34CECBD3742D0C898B484D5ACF5C476B1"

@@ -76,6 +76,34 @@ def run():
 
     print(f"\n[SCALING WORKER] All scaling telemetry saved to {out_path}")
 
+    # STANDALONE PLOT GENERATION (for isolated local testing)
+
+    if not os.environ.get("IS_ORCHESTRATOR"):
+        try:
+            from utils.plot_functions import plot_amdahl_scaling, plot_gustafson_scaling, plot_chunk_optimization
+
+            print("\n[SCALING WORKER] Standalone mode detected. Generating local plots...")
+
+            # calculating path for plots folder
+            outputs_dir = os.path.join(parent_dir, "Outputs")
+            plots_dir = os.path.join(outputs_dir, "Plots")
+            os.makedirs(plots_dir, exist_ok=True)
+
+            if "Amdahl" in final_telemetry:
+                plot_amdahl_scaling(final_telemetry["Amdahl"], plots_dir)
+            if "Gustafson" in final_telemetry:
+                plot_gustafson_scaling(final_telemetry["Gustafson"], plots_dir)
+            if "Granularity" in final_telemetry:
+                plot_chunk_optimization(final_telemetry["Granularity"], plots_dir)
+
+            print(f"[SCALING WORKER] Local plots successfully generated in {plots_dir}")
+
+        except ImportError as e:
+            print(f"\n[SCALING WORKER] Plot functions not found. Skipping local plot generation. Error: {e}")
+    else:
+        # Main is in charge, so let's skip PDF generation
+        print("\n[SCALING WORKER] Orchestrator detected. Delegating plot generation to Main.")
+
 if __name__ == "__main__":
     mp.freeze_support()
     run()
