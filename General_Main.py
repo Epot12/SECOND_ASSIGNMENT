@@ -187,26 +187,30 @@ def main():
 
     generate_plots(synth_all, real_all, io_results, plots_dir)
 
-    if scal_results:
-        if "Amdahl" in scal_results:
-            plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
+    if scal_results and "Amdahl" in scal_results:
+        plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
+
         scientific_data = {}
+        base_seq_time = None
+
         for arch, core_data in scal_results["Amdahl"].items():
-            # taking the average times for each core (1..8)
-            scientific_data[arch] = [core_data[str(c)]["mean"] for c in sorted(core_data.keys(), key=int)]
+            # extracting the average times sorted by number of cores
+            times = [core_data[str(c)]["mean"] for c in sorted(core_data.keys(), key=int)]
 
-        # sequential time
-        base_seq_time = scientific_data["Amdahl_Sequential"][0]
+            if arch == "Amdahl_Sequential":
+                base_seq_time = times[0]
+            else:
+                scientific_data[arch] = times
 
-        generate_execution_time_plot(
-            scientific_data,
-            base_seq_time,
-            output_path=plots_dir / "Fig3b_Wall_Clock_Time_Scaling.pdf"
-        )
-        if "Gustafson" in scal_results:
-            plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
-        if "Granularity" in scal_results:
-            plot_chunk_optimization(scal_results["Granularity"], plots_dir)
+        # generating the Fig3b graph ONLY if a valid baseline is available
+        if base_seq_time is not None:
+            generate_execution_time_plot(
+                scientific_data,
+                base_seq_time,
+                output_path=plots_dir / "Fig3b_Wall_Clock_Time_Scaling.pdf"
+            )
+        else:
+            print("[SYSTEM] Warning: Amdahl_Sequential not found in telemetry. Skipping Fig3b.")
 
     print("\n" + "=" * 80)
     print(" ORCHESTRATION COMPLETE. ALL DATA SECURED. PDFS GENERATED.")

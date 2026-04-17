@@ -215,48 +215,46 @@ def generate_execution_time_plot(results_dict, sequential_time, output_path="exe
         'pdf.fonttype': 42  # to enforce pdf fonts
     })
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    # X axis: number of workers (e.g. from 1 to 8)
-    num_workers = np.arange(1, 9)
+    # Dynamic palettes and markers
+    colors = sns.color_palette("husl", n_colors=len(results_dict))
+    markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p', 'h', '*']
 
-    # color palette
-    colors = sns.color_palette("Set1", n_colors=len(results_dict))
-    markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p']
+    # 1. Sequential Baseline (Only if value exists)
+    if sequential_time is not None:
+        ax.axhline(y=sequential_time, color='black', linestyle='--', linewidth=2,
+                   label=f"Sequential Baseline ({sequential_time:.2f}s)")
+    else:
+        print("[WARNING] Plotting without sequential baseline.")
 
-    # 1. Sequential Baseline Plot
-    ax.axhline(y=sequential_time, color='black', linestyle='--', linewidth=1.5,
-               label=f"Sequential Baseline ({sequential_time:.2f}s)")
-
-    # 2. Plot of the various implementations
+    # 2. Trend plot
+    max_x = 1
     for i, (label, times) in enumerate(results_dict.items()):
-        ax.plot(num_workers, times,
-                label=label,
+        x_axis = np.arange(1, len(times) + 1)
+        if len(times) > max_x: max_x = len(times)
+
+        clean_label = label.replace("Amdahl_", "").replace("_", " ")
+
+        ax.plot(x_axis, times,
+                label=clean_label,
                 color=colors[i],
                 marker=markers[i % len(markers)],
-                markersize=7,
-                linewidth=2,
-                alpha=0.9)
+                markersize=7, linewidth=2, alpha=0.9)
 
-    # Axes configuration
-    ax.set_xlabel('Number of Workers (Threads / Processes)', fontweight='bold')
-    ax.set_ylabel('Wall Clock Time (seconds)', fontweight='bold')
-    ax.set_title('Execution Time Analysis: Scaling Performance', pad=20, fontweight='bold')
+    ax.set_xlabel('Number of Workers (Cores / Threads)', fontweight='bold')
+    ax.set_ylabel('Wall Clock Time (Seconds)', fontweight='bold')
+    ax.set_title('Strong Scaling: Execution Time Analysis', pad=20, fontweight='bold')
 
-    ax.set_xticks(num_workers)
+    ax.set_xticks(range(1, max_x + 1))
 
-    # Legend
-    ax.legend(loc='upper right', frameon=True, shadow=False)
+    ax.legend(loc='upper right', frameon=True, shadow=False, ncol=2)
 
-    # Thin grid
     ax.grid(True, which='both', linestyle=':', alpha=0.6)
 
-    # Layout
     plt.tight_layout()
-
-    # Saving to PDF for LaTeX (Vector)
-    plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
-    print(f"[SUCCESS] Plot saved in: {output_path}")
-    plt.show()
+    plt.savefig(output_path, format='pdf', bbox_inches='tight')
+    plt.close()
+    print(f"[DATA VIZ] Scientific execution time plot saved to: {output_path}")
 
 
