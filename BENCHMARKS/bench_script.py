@@ -52,10 +52,16 @@ def run():
     # 2. GUSTAFSON'S LAW (Weak Scaling)
 
     print("\n--- Running Gustafson's Law ---")
+    final_telemetry["Gustafson"]["Gustafson_IPC"] = run_weak_scaling(SotaIPC, max_cores, items_per_worker)
+    final_telemetry["Gustafson"]["Gustafson_Joblib"] = run_weak_scaling(JoblibBloom, max_cores, items_per_worker)
+    final_telemetry["Gustafson"]["Gustafson_ScalParOpt"] = run_weak_scaling(ScalParBloomOpt, max_cores, items_per_worker)
     final_telemetry["Gustafson"]["Gustafson_NoGIL_Map_Red"] = run_weak_scaling(MapReduceNoGIL, max_cores, items_per_worker)
     final_telemetry["Gustafson"]["Gustafson_NoGIL_Mul_Thr"] = run_weak_scaling(MultiThreading, max_cores, items_per_worker)
-    final_telemetry["Gustafson"]["Gustafson_IPC"] = run_weak_scaling(SotaIPC, max_cores, items_per_worker)
-
+    final_telemetry["Gustafson"]["GustafsonStripedBloom"] = run_weak_scaling(StripedBloomFilter, max_cores, items_per_worker)
+    final_telemetry["Gustafson"]["GustafsonStripedColMajor"] = run_weak_scaling(StripedBloomColMajor, max_cores, items_per_worker)
+    final_telemetry["Gustafson"]["GustafsonStripedFilterSoA"] = run_weak_scaling(StripedBloomSoA, max_cores, items_per_worker)
+    final_telemetry["Gustafson"]["GustafsonStripedFilterSoAOpt"] = run_weak_scaling(StripedBloomSoA_opt, max_cores,
+                                                                                items_per_worker)
 
     # 3. GRANULARITY PROFILING (Chunk Size)
 
