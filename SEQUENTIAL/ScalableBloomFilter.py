@@ -1,4 +1,8 @@
 import os, sys
+import builtins
+if 'profile' not in builtins.__dict__:
+    def profile(func): return func
+    builtins.profile = profile
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -58,6 +62,7 @@ class ScalableBloomFilter:
         print(f"[SYSTEM] Added new layer to Bloom Filter. "
               f"Capacity: {new_capacity}, FP Rate: {new_fp_rate:.5f}")
 
+    @profile
     def add(self, item):
         """Adds an item. If the current filter is full, it creates a new one."""
         active_filter = self.filters[-1]  # The last filter in the list is the active one

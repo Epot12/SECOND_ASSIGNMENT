@@ -2,6 +2,11 @@ import numpy as np
 import mmh3
 import math
 from concurrent.futures import ThreadPoolExecutor
+import builtins
+
+if 'profile' not in builtins.__dict__:
+    def profile(func): return func
+    builtins.profile = profile
 
 
 def _normalize_items(items):
@@ -17,6 +22,7 @@ def _normalize_items(items):
             out.append(str(item).encode('utf-8'))
     return out
 
+@profile
 def _worker_add_striped_soa(args):
     stripe_buf, m_stripe, k, h1_arr, h2_arr = args
     if len(h1_arr) == 0:
@@ -65,7 +71,7 @@ def _worker_contains_striped(args):
 
     return results.tolist(), original_indices
 
-
+@profile
 def _worker_compute_hashes(items_chunk):
     n = len(items_chunk)
     h1_arr = np.zeros(n, dtype=np.uint64)

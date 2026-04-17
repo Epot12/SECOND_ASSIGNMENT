@@ -5,6 +5,10 @@ from multiprocessing import shared_memory
 import uuid
 import weakref
 import atexit
+import builtins
+if 'profile' not in builtins.__dict__:
+    def profile(func): return func
+    builtins.profile = profile
 
 
 # WORKER SCOPE: DYNAMIC SHARED MEMORY CACHE
@@ -38,7 +42,7 @@ def _get_shm_buffer(shm_name: str):
     # Return a zero-copy memoryview of the underlying C array
     return _worker_shm_cache[shm_name].buf
 
-
+@profile
 def _worker_add_chunk(args):
     """
     Inserts a chunk of data into a specific memory layer.
