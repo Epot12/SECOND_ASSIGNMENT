@@ -15,7 +15,6 @@ from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapRed
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
 from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
-from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
 from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedBloomSoA_opt
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
@@ -48,7 +47,6 @@ def run():
     final_telemetry["Amdahl"]["Amdahl_NoGIL_Mul_Thr"] = run_strong_scaling(MultiThreading, max_cores, fixed_size)
     final_telemetry["Amdahl"]["AmdahlStripedBloom"] = run_strong_scaling(StripedBloomFilter, max_cores, fixed_size)
     final_telemetry["Amdahl"]["AmdahlStripedColMajor"] = run_strong_scaling(StripedBloomColMajor, max_cores, fixed_size)
-    final_telemetry["Amdahl"]["AmdahlStripedFilterSoA"] = run_strong_scaling(StripedBloomSoA, max_cores, fixed_size)
     final_telemetry["Amdahl"]["AmdahlStripedFilterSoAOpt"] = run_strong_scaling(StripedBloomSoA_opt, max_cores, fixed_size)
 
     # 2. GUSTAFSON'S LAW (Weak Scaling)
@@ -61,7 +59,6 @@ def run():
     final_telemetry["Gustafson"]["Gustafson_NoGIL_Mul_Thr"] = run_weak_scaling(MultiThreading, max_cores, items_per_worker)
     final_telemetry["Gustafson"]["GustafsonStripedBloom"] = run_weak_scaling(StripedBloomFilter, max_cores, items_per_worker)
     final_telemetry["Gustafson"]["GustafsonStripedColMajor"] = run_weak_scaling(StripedBloomColMajor, max_cores, items_per_worker)
-    final_telemetry["Gustafson"]["GustafsonStripedFilterSoA"] = run_weak_scaling(StripedBloomSoA, max_cores, items_per_worker)
     final_telemetry["Gustafson"]["GustafsonStripedFilterSoAOpt"] = run_weak_scaling(StripedBloomSoA_opt, max_cores,
                                                                                 items_per_worker)
 
