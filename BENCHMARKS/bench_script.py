@@ -16,10 +16,8 @@ from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
 from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
 from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
 from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedBloomSoA_opt
-from PARALLEL.MultiProcBloom import ParallelBloomFilter as ParallelBloom
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
-from PARALLEL.ScalMultProcBloom import ParallelScalableBloomFilter as ScalParBloom
 from PARALLEL.ScalMultProcBloomOpt import ParallelScalableBloomFilter as ScalParBloomOpt
 
 def run():
@@ -41,10 +39,8 @@ def run():
     # 1. AMDAHL'S LAW (Strong Scaling)
 
     print("\n--- Running Amdahl's Law ---")
-    final_telemetry["Amdahl"]["Amdahl_ParBloom"] = run_strong_scaling(ParallelBloom, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_IPC"] = run_strong_scaling(SotaIPC, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_Joblib"] = run_strong_scaling(JoblibBloom, max_cores, fixed_size)
-    final_telemetry["Amdahl"]["Amdahl_ScalPar"] = run_strong_scaling(ScalParBloom, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_ScalParOpt"] = run_strong_scaling(ScalParBloomOpt, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_NoGIL_Map_Red"] = run_strong_scaling(MapReduceNoGIL, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_NoGIL_Mul_Thr"] = run_strong_scaling(MultiThreading, max_cores, fixed_size)
