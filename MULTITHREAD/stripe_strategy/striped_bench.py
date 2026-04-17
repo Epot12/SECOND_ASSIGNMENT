@@ -22,6 +22,7 @@ from utils.utilities import load_data
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter as StripedBloomBase
 from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
 from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
+from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedBloomSoA_opt
 
 
 # CONSTANTS and SCIENTIFIC PARAMETERS
@@ -46,7 +47,8 @@ def run_benchmarks(mode: str):
     architectures = [
         ("Base_AoS_RowMajor", StripedBloomBase),
         ("Test_ColMajor_Query", StripedBloomColMajor),
-        ("Test_SoA_Insert", StripedBloomSoA)
+        ("Test_SoA_Insert", StripedBloomSoA),
+        ("Test_SoA_Insert_opt", StripedBloomSoA_opt),
     ]
 
     for name, ArchClass in architectures:
