@@ -1,6 +1,4 @@
 import json
-import seaborn as sns
-import matplotlib.pyplot as plt
 from utils.utilities import *
 from utils.plot_functions import *
 
@@ -211,7 +209,7 @@ def main():
         if "Gustafson" in scal_results:
             plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
 
-        # Granularity (Chunk Size) 
+        # Granularity (Chunk Size)
         if "Granularity" in scal_results:
             plot_chunk_optimization(scal_results["Granularity"], plots_dir)
 
