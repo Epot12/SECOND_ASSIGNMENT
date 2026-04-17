@@ -14,7 +14,6 @@ from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapRed
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
 from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor
-from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA
 from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedBloomSoA_opt
 from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
@@ -28,7 +27,6 @@ BLOOM_FILTER_IMPLEMENTATIONS = [
     (MapReduceNoGIL, {'num_threads': 2}),
     (StripedBloomFilter, {'num_threads': 2}),
     (StripedBloomFilterColMajor, {'num_threads': 2}),
-    (StripedBloomFilterSoA, {'num_threads': 2}),
     (StripedBloomSoA_opt, {'num_threads': 2}),
     (SotaIPC, {'num_processes': 2}),
     (JoblibBloom, {'n_jobs': 2}),
