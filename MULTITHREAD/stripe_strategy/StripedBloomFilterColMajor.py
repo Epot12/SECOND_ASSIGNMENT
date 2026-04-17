@@ -88,6 +88,12 @@ class StripedBloomFilterColMajor:
         self.executor = ThreadPoolExecutor(max_workers=self.num_threads)
         self._add_new_layer()
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.executor.shutdown()
+
     def _add_new_layer(self):
         depth = len(self.layers)
         cap = self.initial_capacity * (2 ** depth)
