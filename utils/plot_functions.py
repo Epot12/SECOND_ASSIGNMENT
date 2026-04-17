@@ -77,20 +77,21 @@ def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
 
     max_cores = 1
 
-    for arch_name, data in amdahl_results.items():
-        cores = sorted([int(k) for k in data.keys()])
+    palette = sns.color_palette("husl", n_colors=len(amdahl_results))
 
-        # STATISTICAL EXTRACTION: Utilizing the empirical mean execution time
+    for i, (arch_name, data) in enumerate(amdahl_results.items()):
+        if arch_name == "Amdahl_Sequential": continue
+
+        cores = sorted([int(k) for k in data.keys()])
         means = [data[str(c)]["mean"] for c in cores]
 
-        if max(cores) > max_cores: max_cores = max(cores)
-
-        # Speedup calculation normalized against the single-core baseline (T1 / Tn)
         base_time = means[0]
         speedups = [base_time / m for m in means]
 
-        plt.plot(cores, speedups, marker='o', linewidth=2.5, markersize=8,
-                 label=labels.get(arch_name, arch_name), color=colors.get(arch_name, "black"))
+        label = labels.get(arch_name, arch_name.replace("Amdahl", "").replace("_", " "))
+        color = colors.get(arch_name, palette[i % len(palette)])
+
+        plt.plot(cores, speedups, marker='o', linewidth=2.5, label=label, color=color)
 
     # Plotting the theoretical ideal speedup (linear scalability)
     ideal_x = np.arange(1, max_cores + 1)

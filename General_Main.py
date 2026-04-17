@@ -182,35 +182,38 @@ def main():
 
     print(f"[CLEANUP] Workspace is clean. Removed {cleanup_count} temporary files.")
 
-
     # PHASE 4: PLOT GENERATION
-
     generate_plots(synth_all, real_all, io_results, plots_dir)
 
-    if scal_results and "Amdahl" in scal_results:
-        plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
+    if scal_results:
+        # Amdahl (Speedup + Wall Clock Time)
+        if "Amdahl" in scal_results:
+            plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
 
-        scientific_data = {}
-        base_seq_time = None
+            scientific_data = {}
+            base_seq_time = None
 
-        for arch, core_data in scal_results["Amdahl"].items():
-            # extracting the average times sorted by number of cores
-            times = [core_data[str(c)]["mean"] for c in sorted(core_data.keys(), key=int)]
+            for arch, core_data in scal_results["Amdahl"].items():
+                times = [core_data[str(c)]["mean"] for c in sorted(core_data.keys(), key=int)]
+                if arch == "Amdahl_Sequential":
+                    base_seq_time = times[0]
+                else:
+                    scientific_data[arch] = times
 
-            if arch == "Amdahl_Sequential":
-                base_seq_time = times[0]
-            else:
-                scientific_data[arch] = times
+            if base_seq_time is not None:
+                generate_execution_time_plot(
+                    scientific_data,
+                    base_seq_time,
+                    output_path=plots_dir / "Fig3b_Wall_Clock_Time_Scaling.pdf"
+                )
 
-        # generating the Fig3b graph ONLY if a valid baseline is available
-        if base_seq_time is not None:
-            generate_execution_time_plot(
-                scientific_data,
-                base_seq_time,
-                output_path=plots_dir / "Fig3b_Wall_Clock_Time_Scaling.pdf"
-            )
-        else:
-            print("[SYSTEM] Warning: Amdahl_Sequential not found in telemetry. Skipping Fig3b.")
+        # Gustafson (Weak Scaling)
+        if "Gustafson" in scal_results:
+            plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
+
+        # Granularity (Chunk Size) 
+        if "Granularity" in scal_results:
+            plot_chunk_optimization(scal_results["Granularity"], plots_dir)
 
     print("\n" + "=" * 80)
     print(" ORCHESTRATION COMPLETE. ALL DATA SECURED. PDFS GENERATED.")
