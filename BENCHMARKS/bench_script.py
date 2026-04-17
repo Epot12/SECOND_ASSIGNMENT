@@ -11,8 +11,16 @@ sys.path.insert(0, parent_dir)
 from utils.scaling_engine import run_strong_scaling, run_weak_scaling, run_chunk_optimization
 
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceNoGIL
-from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as MultiThreading
+from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter
+from MULTITHREAD.stripe_strategy.StripedBloomFilterColMajor import StripedBloomFilterColMajor as StripedBloomColMajor
+from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA import StripedBloomFilterSoA as StripedBloomSoA
+from MULTITHREAD.stripe_strategy.StripedBloomFilterSoA_opt import StripedBloomFilterSoA as StripedBloomSoA_opt
+from PARALLEL.MultiProcBloom import ParallelBloomFilter as ParallelBloom
+from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaIPC
+from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
+from PARALLEL.ScalMultProcBloom import ParallelScalableBloomFilter as ScalParBloom
+from PARALLEL.ScalMultProcBloomOpt import ParallelScalableBloomFilter as ScalParBloomOpt
 
 def run():
     print("\n[SCALING WORKER] Starting Full Scaling and Profiling Benchmarks...")
@@ -33,10 +41,17 @@ def run():
     # 1. AMDAHL'S LAW (Strong Scaling)
 
     print("\n--- Running Amdahl's Law ---")
+    final_telemetry["Amdahl"]["Amdahl_ParBloom"] = run_strong_scaling(ParallelBloom, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["Amdahl_IPC"] = run_strong_scaling(SotaIPC, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["Amdahl_Joblib"] = run_strong_scaling(JoblibBloom, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["Amdahl_ScalPar"] = run_strong_scaling(ScalParBloom, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["Amdahl_ScalParOpt"] = run_strong_scaling(ScalParBloomOpt, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_NoGIL_Map_Red"] = run_strong_scaling(MapReduceNoGIL, max_cores, fixed_size)
     final_telemetry["Amdahl"]["Amdahl_NoGIL_Mul_Thr"] = run_strong_scaling(MultiThreading, max_cores, fixed_size)
-    final_telemetry["Amdahl"]["Amdahl_IPC"] = run_strong_scaling(SotaIPC, max_cores, fixed_size)
-
+    final_telemetry["Amdahl"]["AmdahlStripedBloom"] = run_strong_scaling(StripedBloomFilter, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["AmdahlStripedColMajor"] = run_strong_scaling(StripedBloomColMajor, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["AmdahlStripedFilterSoA"] = run_strong_scaling(StripedBloomSoA, max_cores, fixed_size)
+    final_telemetry["Amdahl"]["AmdahlStripedFilterSoAOpt"] = run_strong_scaling(StripedBloomSoA_opt, max_cores, fixed_size)
 
     # 2. GUSTAFSON'S LAW (Weak Scaling)
 
