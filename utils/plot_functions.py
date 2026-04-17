@@ -197,3 +197,66 @@ def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
     output_file = plots_dir / 'Fig5_Granularity_Analysis.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
+
+
+
+def generate_execution_time_plot(results_dict, sequential_time, output_path="execution_time_plot.pdf"):
+    # configurations
+    sns.set_theme(style="whitegrid", context="paper")
+    plt.rcParams.update({
+        'font.family': 'serif',
+        'font.size': 11,
+        'axes.labelsize': 12,
+        'axes.titlesize': 13,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'legend.fontsize': 10,
+        'legend.frameon': True,
+        'pdf.fonttype': 42  # to enforce pdf fonts
+    })
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    # X axis: number of workers (e.g. from 1 to 8)
+    num_workers = np.arange(1, 9)
+
+    # color palette
+    colors = sns.color_palette("Set1", n_colors=len(results_dict))
+    markers = ['o', 's', '^', 'D', 'v', '<', '>', 'p']
+
+    # 1. Sequential Baseline Plot
+    ax.axhline(y=sequential_time, color='black', linestyle='--', linewidth=1.5,
+               label=f"Sequential Baseline ({sequential_time:.2f}s)")
+
+    # 2. Plot of the various implementations
+    for i, (label, times) in enumerate(results_dict.items()):
+        ax.plot(num_workers, times,
+                label=label,
+                color=colors[i],
+                marker=markers[i % len(markers)],
+                markersize=7,
+                linewidth=2,
+                alpha=0.9)
+
+    # Axes configuration
+    ax.set_xlabel('Number of Workers (Threads / Processes)', fontweight='bold')
+    ax.set_ylabel('Wall Clock Time (seconds)', fontweight='bold')
+    ax.set_title('Execution Time Analysis: Scaling Performance', pad=20, fontweight='bold')
+
+    ax.set_xticks(num_workers)
+
+    # Legend
+    ax.legend(loc='upper right', frameon=True, shadow=False)
+
+    # Thin grid
+    ax.grid(True, which='both', linestyle=':', alpha=0.6)
+
+    # Layout
+    plt.tight_layout()
+
+    # Saving to PDF for LaTeX (Vector)
+    plt.savefig(output_path, format='pdf', dpi=300, bbox_inches='tight')
+    print(f"[SUCCESS] Plot saved in: {output_path}")
+    plt.show()
+
+
