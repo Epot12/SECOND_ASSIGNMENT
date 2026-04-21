@@ -91,3 +91,9 @@ class ScalableBloomFilter:
     def total_elements_count(self) -> int:
         """Returns the total element count across all filters."""
         return sum(bf.elements_count for bf in self.filters)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
