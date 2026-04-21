@@ -12,7 +12,7 @@ from SEQUENTIAL.BloomFilter import  *
 
 class ScalableBloomFilter:
     def __init__(self, initial_capacity: int, target_fp_rate: float, tightening_ratio: float = 0.9,
-                 growth_factor: int = 2):
+                 growth_factor: int = 2, **kwargs):
         """
         :param initial_capacity: The size n of the first Bloom Filter.
         :param target_fp_rate: The desired MAXIMUM global false positive rate.
