@@ -74,6 +74,11 @@ class ScalableBloomFilter:
 
         active_filter.add(item)
 
+    @profile
+    def add_batch(self, items: list):
+        for item in items:
+            self.add(item)
+
     def __contains__(self, item) -> bool:
         """
         Search for the item in all filters.
@@ -91,6 +96,9 @@ class ScalableBloomFilter:
     def total_elements_count(self) -> int:
         """Returns the total element count across all filters."""
         return sum(bf.elements_count for bf in self.filters)
+
+    def contains_batch(self, items: list) -> list[bool]:
+        return [item in self for item in items]
 
     def __enter__(self):
         return self
