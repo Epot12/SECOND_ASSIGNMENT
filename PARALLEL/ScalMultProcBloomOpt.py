@@ -105,7 +105,7 @@ def _worker_contains_chunk(items):
 class ParallelScalableBloomFilter:
     def __init__(self, initial_capacity: int, target_fp_rate: float,
                  tightening_ratio: float = 0.9, growth_factor: int = 2,
-                 num_processes: int = None, num_threads: int = None):
+                 num_processes: int = None, num_threads: int = None, **kwargs):
 
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
