@@ -15,9 +15,28 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
     plt.figure(figsize=(10, 6))
 
     labels = list(synth_data.keys())
-    synth_totals = [synth_data[k]['ins'] + synth_data[k]['read'] for k in labels]
-    real_totals = [real_data.get(k, {'ins': 0, 'read': 0})['ins'] + real_data.get(k, {'ins': 0, 'read': 0})['read'] for
-                   k in labels]
+
+    synth_totals = []
+    real_totals = []
+
+    for k in labels:
+        s_entry = synth_data.get(k, {})
+        if 'ins' in s_entry:
+            s_tot = s_entry['ins'] + s_entry['read']
+        elif 'metrics' in s_entry:
+            s_tot = s_entry['metrics']['insert_wall']['mean'] + s_entry['metrics']['query_wall']['mean']
+        else:
+            s_tot = 0
+        synth_totals.append(s_tot)
+
+        r_entry = real_data.get(k, {})
+        if 'ins' in r_entry:
+            r_tot = r_entry['ins'] + r_entry['read']
+        elif 'metrics' in r_entry:  
+            r_tot = r_entry['metrics']['insert_wall']['mean'] + r_entry['metrics']['query_wall']['mean']
+        else:
+            r_tot = 0
+        real_totals.append(r_tot)
 
     x = np.arange(len(labels))
     width = 0.35
