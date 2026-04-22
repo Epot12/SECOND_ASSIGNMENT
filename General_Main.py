@@ -61,19 +61,20 @@ def main():
 
     # 3. Virtual Environments Setup
     print("\n[SYSTEM] Verifying Virtual Environments...")
+
+    core_packages = ["mmh3", "joblib", "loky", "bitarray", "numpy", "seaborn", "matplotlib", "pandas"]
+
     path_gil_venv = root_dir / ".venv-gil"
     if not path_gil_venv.exists():
         print("[SYSTEM] Creating GIL Environment...")
         subprocess.run(["uv", "venv", ".venv-gil", "--python", "3.12"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil", "mmh3", "joblib", "loky", "bitarray", "numpy"], cwd=root_dir,
-                       check=True)
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil"] + core_packages, cwd=root_dir, check=True)
 
     path_nogil_venv = root_dir / ".venv-nogil"
     if not path_nogil_venv.exists():
         print("[SYSTEM] Creating No-GIL Environment...")
         subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil", "mmh3", "joblib", "loky", "bitarray", "numpy"],
-                       cwd=root_dir, check=True)
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil"] + core_packages, cwd=root_dir, check=True)
 
     # Resolving Interpreters
     is_windows = os.name == 'nt'
