@@ -14,7 +14,7 @@ def mmap_url_stream(file_path, total_items):
                 if count >= total_items:
                     break
 
-                # decoding only here (CPU-bound operation)
+                # decoding only here
                 url = line.decode('utf-8').strip()
                 if url:
                     yield url

@@ -11,9 +11,6 @@ if 'profile' not in builtins.__dict__:
     builtins.profile = profile
 
 
-# WORKER SCOPE: DYNAMIC SHARED MEMORY CACHE
-
-
 # Global cache for Workers to store active memory links.
 # Prevents the overhead of repeatedly attaching to the same memory block.
 _worker_shm_cache = {}

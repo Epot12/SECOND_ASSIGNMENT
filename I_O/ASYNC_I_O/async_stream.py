@@ -120,7 +120,7 @@ class AsyncParallelStreamProcessor:
         # waits for the conclusion of both the operations
         await asyncio.gather(producer_task, consumer_task)
 
-        print(f"      [ASYNC-PROFILER] Puro I/O Time (Producer): {self.io_time:.2f} s")
+        print(f"      [ASYNC-PROFILER] Pure I/O Time (Producer): {self.io_time:.2f} s")
         print(f"      [ASYNC-PROFILER] Pure CPU Time (Consumer): {self.cpu_time:.2f} s")
 
     def _apply_aging(self):

@@ -122,7 +122,7 @@ class ParallelBloomFilter:
         chunks = self._chunkify(items)
         args = [(chunk, self.k, self.m) for chunk in chunks]
 
-        with mp.Pool(processes=self.num_processes, # TODO: valutare se lasciare la gestione dei processi così oppure far sì che i processi rimangano aperti in background per tutta la vita dell'istanza della classe
+        with mp.Pool(processes=self.num_processes,
                      initializer=worker_init,
                      initargs=(self.bitmap, self.elements_count, self.lock)) as pool:
             pool.map(_worker_add_chunk, args)
@@ -152,5 +152,5 @@ class ParallelBloomFilter:
         return self.count_set_bits() / self.m
 
     def get_actual_fp_rate(self) -> float:
-        """Calculate the real FP rate without race condition risks."""
+        """Calculate the real FP rate"""
         return (self.count_set_bits() / self.m) ** self.k

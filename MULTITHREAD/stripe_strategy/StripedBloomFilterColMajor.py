@@ -79,7 +79,7 @@ def _worker_calc_routing_hashes(items_chunk):
 
 class StripedBloomFilterColMajor:
     def __init__(self, initial_capacity: int, target_fp_rate: float, num_threads: int = 4):
-        self.num_threads = num_threads  # optimized for 4 physical cores
+        self.num_threads = num_threads
         self.initial_capacity = initial_capacity
         self.target_fp_rate = target_fp_rate
         self.p0 = target_fp_rate * 0.1
