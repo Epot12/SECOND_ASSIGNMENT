@@ -11,26 +11,26 @@ from utils.plot_functions import (
 
 def main():
     print("=" * 60)
-    print(" AVVIO GENERATORE GRAFICI DA FILE JSON")
+    print(" STARTING PLOT GENERATOR FROM JSON FILE")
     print("=" * 60)
 
-    # 1. Definisci i percorsi
+    # 1. defining paths
     root_dir = Path(__file__).parent.resolve()
     json_path = root_dir / "Outputs" / "Tables" / "Aggregated_Benchmark_Tables.json"
     plots_dir = root_dir / "Outputs" / "Plots"
 
     plots_dir.mkdir(parents=True, exist_ok=True)
 
-    # 2. Carica i dati salvati
+    # 2. loading saved data
     if not json_path.exists():
-        print(f"[ERRORE] File JSON non trovato in: {json_path}")
+        print(f"[ERROR] File JSON not found in: {json_path}")
         return
 
     with open(json_path, 'r') as f:
         data = json.load(f)
 
-    # 3. Lancia tutte le funzioni di plotting
-    # Fig 1 e Fig 2
+    # 3. Launches all plotting functions
+    # Fig 1 and Fig 2
     generate_plots(
         data.get("Synthetic_Workloads", {}),
         data.get("Real_Workloads", {}),
@@ -44,7 +44,7 @@ def main():
         if "Amdahl" in scal_results:
             plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
 
-            # Estrazione dati per il Wall Clock Time di Amdahl
+            # extracting data for Amdahl wall clock time
             scientific_data = {}
             base_seq_time = None
             for arch, core_data in scal_results["Amdahl"].items():
@@ -70,8 +70,8 @@ def main():
             plot_chunk_optimization(scal_results["Granularity"], plots_dir)
 
     print("\n" + "=" * 60)
-    print(" TUTTI I GRAFICI SONO STATI GENERATI CON SUCCESSO!")
-    print(f" Li trovi nella cartella: {plots_dir}")
+    print(" ALL PLOTS HAVE BEEN SUCCESSFULLY GENERATED!")
+    print(f" Plots can be found in folder: {plots_dir}")
     print("=" * 60)
 
 

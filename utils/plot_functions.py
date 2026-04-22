@@ -32,7 +32,7 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
         r_entry = real_data.get(k, {})
         if 'ins' in r_entry:
             r_tot = r_entry['ins'] + r_entry['read']
-        elif 'metrics' in r_entry:  
+        elif 'metrics' in r_entry:
             r_tot = r_entry['metrics']['insert_wall']['mean'] + r_entry['metrics']['query_wall']['mean']
         else:
             r_tot = 0
@@ -102,6 +102,9 @@ def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
         if arch_name == "Amdahl_Sequential": continue
 
         cores = sorted([int(k) for k in data.keys()])
+
+        if max(cores) > max_cores: max_cores = max(cores)
+
         means = [data[str(c)]["mean"] for c in cores]
 
         base_time = means[0]
@@ -141,27 +144,33 @@ def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
     # Academic plotting configuration via Seaborn
     sns.set_theme(style="whitegrid", context="paper", font_scale=1.4)
     fig, ax = plt.subplots(figsize=(10, 6))
-    palette = {"Gustafson_NoGIL_Map_Red": "#4C72B0", "Gustafson_NoGIL_Mul_Thr": "#55A868", "Gustafson_IPC": "#C44E52"}
+    palette = {"Gustafson_NoGIL_Map_Red": "#4C72B0",
+               "Gustafson_NoGIL_Mul_Thr": "#55A868",
+               "Gustafson_IPC": "#C44E52"}
     labels = {"Gustafson_NoGIL_Map_Red": "No-Old_GIL (Optimized Map-Reduce)",
               "Gustafson_NoGIL_Mul_Thr": "No-Old_GIL (Standard Multi-Threading)",
               "Gustafson_IPC": "Multiprocessing (IPC Shared Memory)"}
 
+    dynamic_palette = sns.color_palette("husl", n_colors=len(gustafson_results))
+
     max_cores = 1
     baseline_time = None
 
-    for arch_name, data in gustafson_results.items():
+    for i, (arch_name, data) in enumerate(gustafson_results.items()):
         cores = sorted([int(k) for k in data.keys()])
 
-        # STATISTICAL EXTRACTION: Extracting empirical means and their respective 95% Confidence Intervals
+        # STATISTICAL EXTRACTION
         means = [data[str(c)]["mean"] for c in cores]
         margins = [data[str(c)]["ci_95_margin"] for c in cores]
 
         if max(cores) > max_cores: max_cores = max(cores)
         if baseline_time is None: baseline_time = means[0]
 
-        # RENDERING ERROR BARS: Displaying statistical uncertainty across multiple runs
+        line_color = palette.get(arch_name, dynamic_palette[i])
+
+        # RENDERING ERROR BARS
         ax.errorbar(cores, means, yerr=margins, fmt='-s', markersize=8, linewidth=2.5, capsize=5, capthick=2,
-                    label=labels.get(arch_name, arch_name), color=palette.get(arch_name, "black"))
+                    label=labels.get(arch_name, arch_name), color=line_color)
 
     # Plotting the theoretical isometric weak scaling (constant execution time)
     ax.axhline(y=baseline_time, color='gray', linestyle='--', linewidth=2, label='Ideal Weak Scaling')
