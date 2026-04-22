@@ -1,13 +1,18 @@
+import os, sys
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
+
+
+
 import time, json
 import gc
 import argparse
 from utils.stats_engine import compute_statistics, TOTAL_RUNS, WARMUP_RUNS
 from utils.utilities import *
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
-
 from MULTITHREAD.ThreadedScalBloomFilter import ThreadedScalableBloomFilter as ThreadBloom
 from MULTITHREAD.MapReduceScalBloom import ThreadedScalableBloomFilter as MapReduceBloom
 from MULTITHREAD.stripe_strategy.StripedBloomFilter import StripedBloomFilter as StripedBloom

@@ -2,6 +2,13 @@ import os, time, json
 import multiprocessing as mp
 import gc
 import sys
+
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
 import argparse
 from utils.stats_engine import compute_statistics, TOTAL_RUNS, WARMUP_RUNS
 from SEQUENTIAL.ScalableBloomFilter import ScalableBloomFilter as SeqBloom
@@ -11,9 +18,7 @@ from PARALLEL.PermPoolBloom import PermPoolScalableBloomFilter as SotaBloom
 from PARALLEL.ScalJobLib import JoblibScalableBloomFilter as JoblibBloom
 from utils.utilities import *
 
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
+
 
 
 
