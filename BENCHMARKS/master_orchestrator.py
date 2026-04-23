@@ -41,6 +41,7 @@ def print_report(gil_data, nogil_data, mode_name):
 def main():
     current_dir = Path(__file__).parent.resolve() # BENCHMARKS
     base_dir = current_dir.parent                 # SECOND_ASSIGNMENT
+    target_dir = base_dir / "utils"
 
     # finding executables
     is_windows = os.name == 'nt'
@@ -61,8 +62,8 @@ def main():
     run_command([str(python_gil), str(script_gil), "--mode", "synthetic"], "Running GIL Worker (Synthetic)", current_dir)
     run_command([str(python_nogil), str(script_nogil), "--mode", "synthetic"], "Running No-GIL Worker (Synthetic)", current_dir)
 
-    with open(current_dir / 'telemetry_gil_synthetic.json', 'r') as f: gil_synth = json.load(f)
-    with open(current_dir / 'telemetry_nogil_synthetic.json', 'r') as f: nogil_synth = json.load(f)
+    with open(target_dir / 'telemetry_gil_synthetic.json', 'r') as f: gil_synth = json.load(f)
+    with open(target_dir / 'telemetry_nogil_synthetic.json', 'r') as f: nogil_synth = json.load(f)
     print_report(gil_synth, nogil_synth, "Synthetic")
 
 
@@ -71,8 +72,8 @@ def main():
     run_command([str(python_gil), str(script_gil), "--mode", "real"], "Running GIL Worker (Real)", current_dir)
     run_command([str(python_nogil), str(script_nogil), "--mode", "real"], "Running No-GIL Worker (Real)", current_dir)
 
-    with open(current_dir / 'telemetry_gil_real.json', 'r') as f: gil_real = json.load(f)
-    with open(current_dir / 'telemetry_nogil_real.json', 'r') as f: nogil_real = json.load(f)
+    with open(target_dir / 'telemetry_gil_real.json', 'r') as f: gil_real = json.load(f)
+    with open(target_dir / 'telemetry_nogil_real.json', 'r') as f: nogil_real = json.load(f)
     print_report(gil_real, nogil_real, "Real Data")
 
     # json are left for general main
