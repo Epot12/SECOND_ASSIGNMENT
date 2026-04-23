@@ -224,4 +224,3 @@ class StripedBloomFilterSoA:
                 final_results[idx] = r
 
         return final_results
-
