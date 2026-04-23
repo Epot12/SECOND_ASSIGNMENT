@@ -45,8 +45,8 @@ def run_benchmarks(mode: str):
 
     architectures = [
         ("Base_AoS_RowMajor", StripedBloomBase),
-        ("Test_ColMajor_Query", StripedBloomColMajor),
-        ("Test_SoA_Insert_opt", StripedBloomSoA_opt)
+        ("Test_ColMajor_Query", StripedBloomColMajor)
+        #("Test_SoA_Insert_opt", StripedBloomSoA_opt)
     ]
 
     for name, ArchClass in architectures:
