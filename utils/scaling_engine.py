@@ -109,7 +109,7 @@ def run_chunk_optimization(BloomClass, num_workers: int, total_items: int, chunk
 
         for run_idx in range(TOTAL_RUNS):
             gc.disable()
-            with BloomClass(initial_capacity=100_000, target_fp_rate=fpr, num_threads=num_workers) as bf:
+            with BloomClass(initial_capacity=total_items, target_fp_rate=fpr, num_threads=num_workers) as bf:
                 bf.min_chunk_size = chunk_size
                 t0 = time.perf_counter()
                 bf.add_batch(dataset)
