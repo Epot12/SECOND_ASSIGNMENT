@@ -1,5 +1,6 @@
 import json
 import time
+import argparse
 from utils.utilities import *
 from utils.plot_functions import *
 
@@ -36,6 +37,24 @@ def run_sub_process(command: list[str], description: str, cwd: Path):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Grand Orchestrator: Pipeline Executive")
+    parser.add_argument("--all", action="store_true", help="Executes all the sections")
+    parser.add_argument("--base", action="store_true", help="Runs Basic Benchmarks")
+    parser.add_argument("--io", action="store_true", help="Performs I/O Stress Tests")
+    parser.add_argument("--scaling", action="store_true", help="Performs Scaling Tests")
+    parser.add_argument("--stripe", action="store_true", help="Performs Tests on Stripe Strategies")
+
+    args = parser.parse_args()
+
+    run_base = args.all or args.base
+    run_io = args.all or args.io
+    run_scaling = args.all or args.scaling
+    run_stripe = args.all or args.stripe
+
+    if not any([run_base, run_io, run_scaling, run_stripe]):
+        print("\n[!] NO SECTIONS SPECIFIED. Use --all or specific flags (e.g. --base --scaling).")
+        parser.print_help()
+        sys.exit(0)
     root_dir = Path(__file__).parent.resolve()
     data_dir = root_dir / "DATA"
     outputs_dir = root_dir / "Outputs"
@@ -93,34 +112,47 @@ def main():
     # PHASE 1: TASK DELEGATION
 
     # A. Base Architecture Benchmarks
-    master_orch = bench_dir / "master_orchestrator.py"
-    if master_orch.exists():
-        run_sub_process([str(python_gil), str(master_orch)], "DELEGATING TO MASTER ORCHESTRATOR", root_dir)
+    if run_base:
+        master_orch = bench_dir / "master_orchestrator.py"
+        if master_orch.exists():
+            run_sub_process([str(python_gil), str(master_orch)], "DELEGATING TO MASTER ORCHESTRATOR", root_dir)
+        else:
+            print(f"[CRITICAL] Master Orchestrator not found at {master_orch}")
+            sys.exit(1)
     else:
-        print(f"[CRITICAL] Master Orchestrator not found at {master_orch}")
-        sys.exit(1)
+        print("\n[SKIP] Base Architecture Benchmarks skipped.")
+
 
     # B. I/O Stress Tests
-    io_orch = io_dir / "master_orchestrator_IO.py"
-    if io_orch.exists():
-        run_sub_process([str(python_gil), str(io_orch)], "DELEGATING TO I/O ORCHESTRATOR", root_dir)
+    if run_io:
+        io_orch = io_dir / "master_orchestrator_IO.py"
+        if io_orch.exists():
+            run_sub_process([str(python_gil), str(io_orch)], "DELEGATING TO I/O ORCHESTRATOR", root_dir)
+        else:
+            print(f"[CRITICAL] I/O Orchestrator not found at {io_orch}")
+            sys.exit(1)
     else:
-        print(f"[CRITICAL] I/O Orchestrator not found at {io_orch}")
-        sys.exit(1)
+        print("\n[SKIP] I/O Stress Tests skipped.")
 
     # C. Scaling Tests (Amdahl's Law)
-    script_scal = bench_dir / "bench_script.py"
-    if script_scal.exists():
-        run_sub_process([str(python_nogil), str(script_scal)], "RUNNING SCALING LAWS ANALYSIS", root_dir)
+    if run_scaling:
+        script_scal = bench_dir / "bench_script.py"
+        if script_scal.exists():
+            run_sub_process([str(python_nogil), str(script_scal)], "RUNNING SCALING LAWS ANALYSIS", root_dir)
+        else:
+            print(f"[WARNING] Scaling Script not found at {script_scal}. Skipping.")
     else:
-        print(f"[WARNING] Scaling Script not found at {script_scal}. Skipping.")
+        print("\n[SKIP] Scaling Laws Analysis skipped.")
 
-    stripe_orch = stripe_dir / "stripe_orchestrator.py"
-    if stripe_orch.exists():
-        # using No GIL python
-        run_sub_process([str(python_nogil), str(stripe_orch)], "RUNNING STRIPE STRATEGIES ANALYSIS", root_dir)
+    if run_stripe:
+        stripe_orch = stripe_dir / "stripe_orchestrator.py"
+        if stripe_orch.exists():
+            # using No GIL python
+            run_sub_process([str(python_nogil), str(stripe_orch)], "RUNNING STRIPE STRATEGIES ANALYSIS", root_dir)
+        else:
+            print(f"[WARNING] Stripe Orchestrator not found at {stripe_orch}. Skipping.")
     else:
-        print(f"[WARNING] Stripe Orchestrator not found at {stripe_orch}. Skipping.")
+        print("\n[SKIP] Stripe Strategies Analysis skipped.")
 
     # PHASE 2: DATA AGGREGATION
 
