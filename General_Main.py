@@ -217,7 +217,10 @@ def main():
     print(f"[CLEANUP] Workspace is clean. Removed {cleanup_count} temporary files.")
 
     # PHASE 4: PLOT GENERATION
-    generate_plots(synth_all, real_all, io_results, plots_dir, TIMESTAMP)
+    if synth_all or real_all or io_results:
+        generate_plots(synth_all, real_all, io_results, plots_dir, TIMESTAMP)
+    else:
+        print("\n[SKIP] Bypassing Base/IO plot generation (no data available).")
 
     if scal_results:
         # Amdahl (Speedup + Wall Clock Time)
