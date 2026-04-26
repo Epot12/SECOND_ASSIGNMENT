@@ -51,23 +51,17 @@ def run_multithreading():
         bf.add_batch(DATASET)
 
 
-def profile_function(func, name, use_cprofile=True):
-    """
-    Executes the function. Use cProfile if use_cprofile=True,
-    otherwise it does a pure time benchmark
-    """
+def profile_function(func, name, use_cprofile=True, iterations=5):
     start_time = time.perf_counter()
 
     if use_cprofile:
         profiler = cProfile.Profile()
         profiler.enable()
-
         func()
-
         profiler.disable()
         end_time = time.perf_counter()
 
-        # saving results
+        # --- REINSERITO IL SALVATAGGIO STATS ---
         stats_file = f"{name}_profiler.pstat"
         with open(stats_file, 'w') as f:
             stats = pstats.Stats(profiler, stream=f)
@@ -76,11 +70,21 @@ def profile_function(func, name, use_cprofile=True):
         print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. Stats saved to {stats_file}")
 
     else:
-        # execution without profiler
-        func()
-        end_time = time.perf_counter()
-        print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. (Pure Wall-Clock Time, No Profiler overhead)")
+        # STRATEGIA PROFESSIONALE: 2 WARM-UP + 5 STEADY-STATE
+        print(f"[WARM-UP] Esecuzione di 2 run di riscaldamento per {name}...")
+        for _ in range(2):
+            func()
 
+        print(f"[BENCHMARK] Calcolo media su {iterations} iterazioni...")
+        times = []
+        for i in range(iterations):
+            it_start = time.perf_counter()
+            func()
+            times.append(time.perf_counter() - it_start)
+            print(f"  -> Run {i + 1}: {times[-1]:.4f}s")
+
+        avg_time = sum(times) / len(times)
+        print(f"\n[RESULT] {name} - Media Steady State: {avg_time:.4f}s")
 
 if __name__ == "__main__":
     # WORKER MODE
