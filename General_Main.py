@@ -222,7 +222,7 @@ def main():
     if scal_results:
         # Amdahl (Speedup + Wall Clock Time)
         if "Amdahl" in scal_results:
-            plot_amdahl_scaling(scal_results["Amdahl"], plots_dir)
+            plot_amdahl_scaling(scal_results["Amdahl"], plots_dir, TIMESTAMP)
 
             scientific_data = {}
             base_seq_time = None

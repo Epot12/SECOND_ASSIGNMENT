@@ -8,7 +8,7 @@ from pathlib import Path
 
 # plotting function
 
-def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
+def generate_plots(synth_data, real_data, io_data, plots_dir: Path, timestamp: str):
     print("\n[DATA VIZ] Generating High-Fidelity PDF Plots...")
 
     # PLOT 1: Execution times (Synthetic vs Real)
@@ -52,7 +52,8 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
     ax.legend()
 
     fig.tight_layout()
-    plt.savefig(plots_dir / 'Fig1_Total_Execution_Time.pdf', format='pdf', bbox_inches='tight')
+    output_file_1 = plots_dir / f'Fig1_Total_Execution_Time_{timestamp}.pdf'
+    plt.savefig(str(output_file_1), format='pdf', bbox_inches='tight')
     plt.close()
 
     # PLOT 2: I/O Throughput Analysis
@@ -76,7 +77,8 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
         ax.legend()
 
         fig.tight_layout()
-        plt.savefig(plots_dir / 'Fig2_IO_Throughput.pdf', format='pdf', bbox_inches='tight')
+        output_file_2 = plots_dir / f'Fig2_IO_Throughput_{timestamp}.pdf'
+        plt.savefig(str(output_file_2), format='pdf', bbox_inches='tight')
         plt.close()
 
     print(f"[DATA VIZ] Plots successfully saved in {plots_dir}")
