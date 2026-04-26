@@ -7,7 +7,7 @@ from pathlib import Path
 
 # --- CONFIGURATION ---
 # Base URL for Common Crawl Index (CC-MAIN-2024-10)
-URL = "https://commoncrawl.s3.amazonaws.com/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz"
+URL = "https://data.commoncrawl.org/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz"
 DATA_DIR = Path("DATA")
 RAW_GZ = DATA_DIR / "cdx-00000.gz"
 RAW_FILE = DATA_DIR / "cdx-00000"
@@ -22,10 +22,24 @@ def setup_environment():
 
 
 def download_file(url, dest):
-    """Downloads the dataset with a simple progress tracker."""
+    """Downloads the dataset with a proper User-Agent to avoid 403 errors."""
     if dest.exists() or RAW_FILE.exists():
-        print(f"[SKIP] File already exists at {dest} or {RAW_FILE}. Skipping download.")
+        print(f"[SKIP] File already exists. Skipping download.")
         return
+
+    # Questo header "inganna" il server facendogli credere che siamo un browser
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+
+    print(f"[DOWNLOAD] Fetching dataset from Common Crawl Gateway...")
+    # Aggiungiamo headers=headers alla chiamata qui sotto
+    with requests.get(url, stream=True, headers=headers) as r:
+        r.raise_for_status()
+        with open(dest, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024*1024): # Chunk da 1MB per velocità
+                f.write(chunk)
+    print(f"[SUCCESS] Download completed.")
 
     print(f"[DOWNLOAD] Fetching dataset from S3... (This might take a while)")
     with requests.get(url, stream=True) as r:
