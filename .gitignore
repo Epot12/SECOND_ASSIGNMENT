@@ -53,3 +53,5 @@ I_O/telemetry_*.json
 # Profiling files
 *.pstat
 *.lprof
+
+TESTS_REPORT.txt
