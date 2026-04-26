@@ -50,7 +50,7 @@ def run_strong_scaling(BloomClass, max_workers: int, total_items: int, fpr: floa
 
         for run_idx in range(TOTAL_RUNS):
             gc.disable()
-            with BloomClass(initial_capacity=100_000, target_fp_rate=fpr, num_threads=workers) as bf:
+            with BloomClass(initial_capacity=total_items, target_fp_rate=fpr, num_threads=workers) as bf:
                 t0 = time.perf_counter()
                 bf.add_batch(dataset)
                 t1 = time.perf_counter()
@@ -81,7 +81,7 @@ def run_weak_scaling(BloomClass, max_workers: int, items_per_worker: int, fpr: f
 
         for run_idx in range(TOTAL_RUNS):
             gc.disable()
-            with BloomClass(initial_capacity=100_000, target_fp_rate=fpr, num_threads=workers) as bf:
+            with BloomClass(initial_capacity=current_workload, target_fp_rate=fpr, num_threads=workers) as bf:
                 t0 = time.perf_counter()
                 bf.add_batch(dataset_slice)
                 t1 = time.perf_counter()
