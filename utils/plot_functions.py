@@ -82,7 +82,7 @@ def generate_plots(synth_data, real_data, io_data, plots_dir: Path):
     print(f"[DATA VIZ] Plots successfully saved in {plots_dir}")
 
 
-def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
+def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path, timestamp: str):
     print("\n[DATA VIZ] Generating Amdahl's Law Scaling Plot...")
     if not amdahl_results: return
 
@@ -132,12 +132,12 @@ def plot_amdahl_scaling(amdahl_results: dict, plots_dir: Path):
     plt.legend(loc='upper left')
 
     plt.tight_layout()
-    output_file = plots_dir / 'Fig3_Amdahl_Scaling.pdf'
-    plt.savefig(output_file, format='pdf', bbox_inches='tight')
+    output_file = plots_dir / f'Fig3_Amdahl_Scaling_{timestamp}.pdf'
+    plt.savefig(str(output_file), format='pdf', bbox_inches='tight')
     plt.close()
 
 
-def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
+def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path, timestamp: str):
     print("\n[DATA VIZ] Generating Gustafson's Law Plot with Confidence Intervals...")
     if not gustafson_results: return
 
@@ -183,12 +183,12 @@ def plot_gustafson_scaling(gustafson_results: dict, plots_dir: Path):
     ax.legend(frameon=True, loc='upper left', fontsize='small')
 
     plt.tight_layout()
-    output_file = plots_dir / 'Fig4_Gustafson_Weak_Scaling.pdf'
+    output_file = plots_dir / f'Fig4_Gustafson_Weak_Scaling_{timestamp}.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
 
 
-def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
+def plot_chunk_optimization(chunk_results: dict, plots_dir: Path, timestamp: str):
     print("\n[DATA VIZ] Generating Granularity Plot with Error Bands...")
     if not chunk_results: return
 
@@ -223,7 +223,7 @@ def plot_chunk_optimization(chunk_results: dict, plots_dir: Path):
     plt.legend()
 
     plt.tight_layout()
-    output_file = plots_dir / 'Fig5_Granularity_Analysis.pdf'
+    output_file = plots_dir / f'Fig5_Granularity_Analysis_{timestamp}.pdf'
     plt.savefig(output_file, format='pdf', dpi=300)
     plt.close()
 

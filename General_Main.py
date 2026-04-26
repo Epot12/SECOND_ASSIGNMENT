@@ -1,4 +1,5 @@
 import json
+import time
 from utils.utilities import *
 from utils.plot_functions import *
 
@@ -18,6 +19,7 @@ EXPECTED_SHA256 = "3D9F2F2BAEFF3DB20262B6E5580A8BA34CECBD3742D0C898B484D5ACF5C47
 sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
 plt.rcParams['font.family'] = 'serif'
 plt.rcParams['pdf.fonttype'] = 42  # Ensures fonts are embedded in the PDF
+TIMESTAMP = time.strftime("%Y%m%d_%H%M%S")
 
 
 def run_sub_process(command: list[str], description: str, cwd: Path):
@@ -40,6 +42,7 @@ def main():
     plots_dir = outputs_dir / "Plots"
     tables_dir = outputs_dir / "Tables"
     bench_dir = root_dir / "BENCHMARKS"
+    utils_dir = root_dir/"utils"
     io_dir = root_dir / "I_O"
     stripe_dir = root_dir / "MULTITHREAD" / "stripe_strategy"
 
@@ -130,10 +133,10 @@ def main():
         return {}
 
     # Load Base Benchmarks
-    synth_gil = load_json_safe(bench_dir / "telemetry_gil_synthetic.json")
-    synth_nogil = load_json_safe(bench_dir / "telemetry_nogil_synthetic.json")
-    real_gil = load_json_safe(bench_dir / "telemetry_gil_real.json")
-    real_nogil = load_json_safe(bench_dir / "telemetry_nogil_real.json")
+    synth_gil = load_json_safe(utils_dir / "telemetry_gil_synthetic.json")
+    synth_nogil = load_json_safe(utils_dir / "telemetry_nogil_synthetic.json")
+    real_gil = load_json_safe(utils_dir / "telemetry_gil_real.json")
+    real_nogil = load_json_safe(utils_dir / "telemetry_nogil_real.json")
 
     # Load I/O and Scaling
     io_results = load_json_safe(io_dir / "telemetry_io.json")
@@ -152,7 +155,7 @@ def main():
         "Scaling_Laws": scal_results
     }
 
-    tables_file = tables_dir / "Aggregated_Benchmark_Tables.json"
+    tables_file = tables_dir / f"Aggregated_Benchmark_Tables_{TIMESTAMP}.json"
     with open(tables_file, 'w') as f:
         json.dump(aggregated_tables, f, indent=4)
     print(f"[DATA EXPORT] Aggregated Master Table saved to: {tables_file.name}")
@@ -163,10 +166,10 @@ def main():
     print("\n[CLEANUP] Removing intermediate JSON telemetry files...")
 
     temp_files = [
-        bench_dir / "telemetry_gil_synthetic.json",
-        bench_dir / "telemetry_nogil_synthetic.json",
-        bench_dir / "telemetry_gil_real.json",
-        bench_dir / "telemetry_nogil_real.json",
+        utils_dir / "telemetry_gil_synthetic.json",
+        utils_dir / "telemetry_nogil_synthetic.json",
+        utils_dir / "telemetry_gil_real.json",
+        utils_dir / "telemetry_nogil_real.json",
         bench_dir / "telemetry_bench_script.json",
         io_dir / "telemetry_io.json",
         stripe_dir / "telemetry_patterns_synthetic.json",
@@ -182,7 +185,7 @@ def main():
     print(f"[CLEANUP] Workspace is clean. Removed {cleanup_count} temporary files.")
 
     # PHASE 4: PLOT GENERATION
-    generate_plots(synth_all, real_all, io_results, plots_dir)
+    generate_plots(synth_all, real_all, io_results, plots_dir, TIMESTAMP)
 
     if scal_results:
         # Amdahl (Speedup + Wall Clock Time)
@@ -203,16 +206,16 @@ def main():
                 generate_execution_time_plot(
                     scientific_data,
                     base_seq_time,
-                    output_path=plots_dir / "Fig3b_Wall_Clock_Time_Scaling.pdf"
+                    output_path=plots_dir / f"Fig3b_Wall_Clock_Time_Scaling_{TIMESTAMP}.pdf"
                 )
 
         # Gustafson (Weak Scaling)
         if "Gustafson" in scal_results:
-            plot_gustafson_scaling(scal_results["Gustafson"], plots_dir)
+            plot_gustafson_scaling(scal_results["Gustafson"], plots_dir, TIMESTAMP)
 
         # Granularity (Chunk Size)
         if "Granularity" in scal_results:
-            plot_chunk_optimization(scal_results["Granularity"], plots_dir)
+            plot_chunk_optimization(scal_results["Granularity"], plots_dir, TIMESTAMP)
 
     print("\n" + "=" * 80)
     print(" ORCHESTRATION COMPLETE. ALL DATA SECURED. PDFS GENERATED.")
