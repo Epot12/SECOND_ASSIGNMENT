@@ -42,6 +42,11 @@ This project utilizes real-world web topological data sourced from the **Common 
 ### Quick Start: Automated Data Setup
 Execute the following commands from the project root (`SECOND_ASSIGNMENT`) to autonomously fetch and extract the exact data shard required for empirical evaluation:
 
+**0. Copy python environment**
+```bash
+uv sync
+```
+
 **1. Create the Local Data Directory**
 ```bash
 mkdir DATA
@@ -65,7 +70,7 @@ gunzip DATA/cdx-00000.gz
 - Windows (PowerShell):
 
 ```bash
-python -c "import gzip, shutil; print('Unzipping...'); shutil.copyfileobj(gzip.open('DATA/cdx-00000.gz', 'rb'), open('DATA/cdx-00000', 'wb')); print('Done!')"
+uv run python -c "import gzip, shutil; print('Unzipping...'); shutil.copyfileobj(gzip.open('DATA/cdx-00000.gz', 'rb'), open('DATA/cdx-00000', 'wb')); print('Done!')"
 ```
 
 (Critical: Ensure the extracted file is named exactly cdx-00000 without any file extension).
