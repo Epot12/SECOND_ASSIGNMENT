@@ -94,10 +94,28 @@ def main():
         subprocess.run(["uv", "pip", "install", "--python", ".venv-gil"] + core_packages_gil, cwd=root_dir, check=True)
 
     path_nogil_venv = root_dir / ".venv-nogil"
+
     if not path_nogil_venv.exists():
         print("[SYSTEM] Creating No-GIL Environment...")
-        subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil"] + core_packages_nogil, cwd=root_dir, check=True)
+
+        # --- LA MAGIA: Creiamo un ambiente "pulito" isolato dal Python 3.12 padre ---
+        clean_env = os.environ.copy()
+        clean_env.pop("VIRTUAL_ENV", None)  # Rimuoviamo il riferimento al venv padre
+
+        # Puliamo il PATH da eventuali riferimenti alla cartella .venv-gil
+        clean_env["PATH"] = os.pathsep.join(
+            [p for p in clean_env.get("PATH", "").split(os.pathsep) if ".venv-gil" not in p]
+        )
+        # ----------------------------------------------------------------------------
+
+        # Creiamo l'ambiente passando l'ambiente pulito (env=clean_env)
+        subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True, env=clean_env)
+
+        # Installiamo i pacchetti usando l'ambiente pulito
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil"] + core_packages_nogil, cwd=root_dir,
+                       check=True, env=clean_env)
+    else:
+        print("[SYSTEM] No-GIL Environment verified.")
 
     # Resolving Interpreters
     is_windows = os.name == 'nt'
