@@ -86,6 +86,53 @@ uv run python DATA_MANAGEMENT/check_dataset.py
 uv run python DATA_MANAGEMENT/data_management.py
 ```
 
+### Python Framework: Separation of Concerns
+To maximize throughput in I/O-bound and CPU-bound tasks, the project employs a **Dual-Environment Architecture**:
+1.  **Orchestration Layer (.venv-gil):** Operates on a stable Python 3.12 stack. It handles telemetry aggregation, data integrity verification (SHA-256), and visualization via `Matplotlib/Seaborn`.
+2.  **Computational Layer (.venv-nogil):** Utilizes the experimental `3.13t` free-threaded interpreter. Its scope is strictly limited to parallelizable data processing to bypass the Global Interpreter Lock.
+
+
+
+---
+
+### Manual Mitigation Strategy (Workaround)
+
+Should the automated orchestration script fail to handle the aggressive environment sanitization required by certain Windows configurations, the following **Manual Isolation Protocol** must be executed via the Command Line Interface (CLI).
+
+#### Step 1: Environment Purge
+To ensure idempotency, all legacy or corrupted artifacts must be eliminated from the workspace.
+```bash
+# Removing the corrupted virtual environment
+rmdir /s /q .venv-nogil
+
+# Purging the UV cache to prevent re-use of faulty build artifacts
+uv cache clean
+```
+
+#### Step 2: Isolated Interpreter Provisioning
+Initialize the virtual environment by explicitly targeting the free-threaded binary.
+
+```bash
+uv venv .venv-nogil --python 3.13t
+```
+
+
+#### Step 3: Minimalist Dependency Injection
+In accordance with the principle of "Least Privilege," only the essential computational libraries are installed. Visualization libraries are excluded from this layer to mitigate C-extension compilation risks.
+
+```bash
+uv pip install --python .venv-nogil mmh3 joblib loky bitarray numpy pandas
+```
+
+#### 4. Verification of GIL Status
+Post-installation, it is imperative to verify that the Global Interpreter Lock is indeed disabled within the newly created environment.
+
+
+```bash
+.\.venv-nogil\Scripts\python.exe -c "import sys; print(f'GIL Disabled: {not sys._is_gil_enabled()}')"
+```
+
+
 ## Execution Directives
 The experimental framework is governed by a central orchestrator (General_Main.py). This executive script dynamically resolves dependencies defined in uv.lock, provisions the required GIL/No-GIL environments, delegates tasks to concurrent subsystems, and aggregates telemetry data.
 

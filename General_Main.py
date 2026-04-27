@@ -3,6 +3,12 @@ import time
 import argparse
 from utils.utilities import *
 from utils.plot_functions import *
+import os
+import sys
+import subprocess
+from pathlib import Path
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # GENERAL MAIN: THE GRAND ORCHESTRATOR
 #this file is the entry point of the entire project
@@ -81,40 +87,52 @@ def main():
         print("       downloaded from CC-MAIN-2024-10 and extracted in the DATA folder.")
         sys.exit(1)
 
-    # 3. Virtual Environments Setup
+    # --- 3. Virtual Environments Setup ---
     print("\n[SYSTEM] Verifying Virtual Environments...")
 
     core_packages_gil = ["mmh3", "joblib", "loky", "bitarray", "numpy", "seaborn", "matplotlib", "pandas"]
     core_packages_nogil = ["mmh3", "joblib", "loky", "bitarray", "numpy", "pandas"]
 
+    # Gestione ambiente GIL
     path_gil_venv = root_dir / ".venv-gil"
     if not path_gil_venv.exists():
         print("[SYSTEM] Creating GIL Environment...")
         subprocess.run(["uv", "venv", ".venv-gil", "--python", "3.12"], cwd=root_dir, check=True)
-        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil"] + core_packages_gil, cwd=root_dir, check=True)
+        subprocess.run(["uv", "pip", "install", "--python", ".venv-gil"] + core_packages_gil, cwd=root_dir,
+                           check=True)
 
+    # Gestione ambiente No-GIL
     path_nogil_venv = root_dir / ".venv-nogil"
 
     if not path_nogil_venv.exists():
-        print("[SYSTEM] Creating No-GIL Environment...")
+        print("[SYSTEM] Creating No-GIL Environment (Isolated Build)...")
 
-        # --- LA MAGIA: Creiamo un ambiente "pulito" isolato dal Python 3.12 padre ---
-        clean_env = os.environ.copy()
-        clean_env.pop("VIRTUAL_ENV", None)  # Rimuoviamo il riferimento al venv padre
+        # --- SANIFICAZIONE AGGRESSIVA ---
+        essential_vars = ["SYSTEMROOT", "PATH", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "TMP", "TEMP", "USERNAME",
+                              "COMSPEC"]
+        clean_env = {k: v for k, v in os.environ.items() if k.upper() in essential_vars}
 
-        # Puliamo il PATH da eventuali riferimenti alla cartella .venv-gil
+        parent_python_dir = str(Path(sys.executable).parent).lower()
         clean_env["PATH"] = os.pathsep.join(
-            [p for p in clean_env.get("PATH", "").split(os.pathsep) if ".venv-gil" not in p]
-        )
-        # ----------------------------------------------------------------------------
+                [p for p in clean_env.get("PATH", "").split(os.pathsep) if parent_python_dir not in p.lower()]
+            )
 
-        # Creiamo l'ambiente passando l'ambiente pulito (env=clean_env)
+        clean_env["PYTHONPATH"] = ""
+        clean_env["PYTHONHOME"] = ""
+        clean_env["PYTHONNOUSERSITE"] = "1"
+        clean_env["VIRTUAL_ENV"] = ""
+        # --------------------------------
+
+        # Creazione venv con isolamento totale
         subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True, env=clean_env)
 
-        # Installiamo i pacchetti usando l'ambiente pulito
+        # Installazione pacchetti
+        print("[SYSTEM] Installing No-GIL dependencies...")
         subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil"] + core_packages_nogil, cwd=root_dir,
-                       check=True, env=clean_env)
+                           check=True, env=clean_env)
+
     else:
+        # Questo else ora è correttamente collegato a "if not path_nogil_venv.exists()"
         print("[SYSTEM] No-GIL Environment verified.")
 
     # Resolving Interpreters
