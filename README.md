@@ -29,7 +29,7 @@ Execute the following commands in your terminal to clone the repository and navi
 
 ```bash
 # 1. Clone the repository to your local machine
-git clone [https://github.com/Epot12/SECOND_ASSIGNMENT.git](https://github.com/Epot12/SECOND_ASSIGNMENT.git)
+git clone https://github.com/Epot12/SECOND_ASSIGNMENT.git
 
 # 2. Navigate into the designated project directory
 cd SECOND_ASSIGNMENT
