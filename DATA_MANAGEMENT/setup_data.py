@@ -6,7 +6,7 @@ import shutil
 import hashlib
 from pathlib import Path
 
-# --- CONFIGURATION (The "Scientific" Truth) ---
+# --- CONFIGURATION ---
 # Exact shard used in benchmarks (CC-MAIN-2024-10)
 URL = "https://data.commoncrawl.org/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz"
 # SHA-256 of the COMPRESSED .gz file to ensure identity

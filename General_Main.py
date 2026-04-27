@@ -93,7 +93,7 @@ def main():
     core_packages_gil = ["mmh3", "joblib", "loky", "bitarray", "numpy", "seaborn", "matplotlib", "pandas"]
     core_packages_nogil = ["mmh3", "joblib", "loky", "bitarray", "numpy", "pandas"]
 
-    # Gestione ambiente GIL
+    # managing GIL environment
     path_gil_venv = root_dir / ".venv-gil"
     if not path_gil_venv.exists():
         print("[SYSTEM] Creating GIL Environment...")
@@ -101,13 +101,13 @@ def main():
         subprocess.run(["uv", "pip", "install", "--python", ".venv-gil"] + core_packages_gil, cwd=root_dir,
                            check=True)
 
-    # Gestione ambiente No-GIL
+    # managing No-GIL environment
     path_nogil_venv = root_dir / ".venv-nogil"
 
     if not path_nogil_venv.exists():
         print("[SYSTEM] Creating No-GIL Environment (Isolated Build)...")
 
-        # --- SANIFICAZIONE AGGRESSIVA ---
+        # sanitizing
         essential_vars = [
             "SYSTEMROOT", "PATH", "USERPROFILE", "LOCALAPPDATA", "APPDATA",
             "TMP", "TEMP", "USERNAME", "COMSPEC",
@@ -125,16 +125,16 @@ def main():
         clean_env["VIRTUAL_ENV"] = ""
         # --------------------------------
 
-        # Creazione venv con isolamento totale
+        # Venv creation with total insulation
         subprocess.run(["uv", "venv", ".venv-nogil", "--python", "3.13t"], cwd=root_dir, check=True, env=clean_env)
 
-        # Installazione pacchetti
+        # Package installation
         print("[SYSTEM] Installing No-GIL dependencies...")
         subprocess.run(["uv", "pip", "install", "--python", ".venv-nogil"] + core_packages_nogil, cwd=root_dir,
                            check=True, env=clean_env)
 
     else:
-        # Questo else ora è correttamente collegato a "if not path_nogil_venv.exists()"
+        # This else is now correctly linked to "if not path_nogil_venv.exists()"
         print("[SYSTEM] No-GIL Environment verified.")
 
     # Resolving Interpreters

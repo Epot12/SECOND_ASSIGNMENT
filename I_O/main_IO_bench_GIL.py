@@ -26,7 +26,7 @@ def network_stream(total_items):
 
 
 # parametric STRESS TEST ROUTINE
-# PARAMETRIC STRESS TEST ROUTINE
+
 async def run_stress_test(mode: str):
     BATCH_SIZE = 50_000  # Large enough to justify IPC overhead
 

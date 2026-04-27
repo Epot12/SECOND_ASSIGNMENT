@@ -7,7 +7,7 @@ This repository contains a high-performance framework implementing a Bloom Filte
 ## Technical Requirements
 
 ### 1. Operating System
-* **Primary Environment:** Microsoft Windows 10 Pro 10.0.19045 N/D build 19045.
+* **Primary Environment:** Microsoft Windows 10 Pro 10.0.19045 N/D build 19045 or better is requested.
 * *Note:* The software is natively built for Windows 10 Pro (x86_64) but maintains macOS and Linux compatibility via dynamic path and interpreter resolution. However, performance and scaling profiles for Multiprocessing IPC may vary across platforms due to the fundamental architectural differences between POSIX fork and Windows spawn process generation mechanisms.
 
 ### 2. Execution Framework (`uv`)
@@ -142,7 +142,7 @@ To sequentially execute all experimental phases and automatically generate bench
 ```bash
 uv run python General_Main.py
 ```
-a help menu will be displayed showing all the possible options, that are
+a help menu will be displayed showing all the possible options, that are exposed below.
 
 ### Execution Flags and Module Orchestration
 

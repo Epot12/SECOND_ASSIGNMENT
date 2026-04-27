@@ -61,7 +61,7 @@ def profile_function(func, name, use_cprofile=True, iterations=5):
         profiler.disable()
         end_time = time.perf_counter()
 
-        # --- REINSERITO IL SALVATAGGIO STATS ---
+        # SAVING STATS REINSERTED
         stats_file = f"{name}_profiler.pstat"
         with open(stats_file, 'w') as f:
             stats = pstats.Stats(profiler, stream=f)
@@ -70,7 +70,7 @@ def profile_function(func, name, use_cprofile=True, iterations=5):
         print(f"[COMPLETED] {name} in {end_time - start_time:.2f}s. Stats saved to {stats_file}")
 
     else:
-        # STRATEGIA PROFESSIONALE: 2 WARM-UP + 5 STEADY-STATE
+        # 2 WARM-UP + 5 STEADY-STATE
         print(f"[WARM-UP] Esecuzione di 2 run di riscaldamento per {name}...")
         for _ in range(2):
             func()
