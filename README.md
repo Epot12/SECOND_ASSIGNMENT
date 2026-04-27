@@ -65,7 +65,7 @@ gunzip DATA/cdx-00000.gz
 - Windows (PowerShell):
 
 ```bash
-tar -xvzf DATA/cdx-00000.gz -C DATA/
+python -c "import gzip, shutil; print('Unzipping...'); shutil.copyfileobj(gzip.open('DATA/cdx-00000.gz', 'rb'), open('DATA/cdx-00000', 'wb')); print('Done!')"
 ```
 
 (Critical: Ensure the extracted file is named exactly cdx-00000 without any file extension).
