@@ -50,7 +50,7 @@ mkdir DATA
 **2. Download the Compressed Index**
 
 ```bash
-curl -L -o DATA/cdx-00000.gz [https://data.commoncrawl.org/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz](https://data.commoncrawl.org/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz)
+curl -L -o DATA/cdx-00000.gz https://data.commoncrawl.org/cc-index/collections/CC-MAIN-2024-10/indexes/cdx-00000.gz
 ```
 
 **3. Extract the Dataset**
