@@ -21,6 +21,20 @@ If `uv` is not present on your system, install it via the official channels:
 
 ---
 
+## Repository Acquisition & Setup
+
+To reproduce the experimental benchmarking suite locally, the initial step is to clone this repository to your local host machine. Ensure that a modern version of `git` is installed and accessible via your system's PATH.
+
+Execute the following commands in your terminal to clone the repository and navigate into the project's root directory:
+
+```bash
+# 1. Clone the repository to your local machine
+git clone [https://github.com/Epot12/SECOND_ASSIGNMENT.git](https://github.com/Epot12/SECOND_ASSIGNMENT.git)
+
+# 2. Navigate into the designated project directory
+cd SECOND_ASSIGNMENT
+```
+
 ## Dataset Acquisition & Preparation
 
 This project utilizes real-world web topological data sourced from the **Common Crawl** index (Snapshot: `CC-MAIN-2024-10`). Due to the substantial payload size (~5.5 GB uncompressed) and restrictive AWS S3 bucket policies, the dataset must be downloaded and extracted prior to pipeline execution.
