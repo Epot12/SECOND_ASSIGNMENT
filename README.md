@@ -80,10 +80,10 @@ Once the raw file is extracted, invoke the Python parsing scripts to validate in
 
 ```bash
 # Validate CDXJ Format and File Integrity
-uv run python DATA_MANAGEMENT/validate_cc_dataset.py
+uv run python DATA_MANAGEMENT/check_dataset.py
 
 # Extract URL entities for High-Performance Benchmarking
-uv run python DATA_MANAGEMENT/prepare_full_dataset.py
+uv run python DATA_MANAGEMENT/data_management.py
 ```
 
 ## Execution Directives
