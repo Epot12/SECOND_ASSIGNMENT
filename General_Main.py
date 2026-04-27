@@ -108,10 +108,12 @@ def main():
         print("[SYSTEM] Creating No-GIL Environment (Isolated Build)...")
 
         # --- SANIFICAZIONE AGGRESSIVA ---
-        essential_vars = ["SYSTEMROOT", "PATH", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "TMP", "TEMP", "USERNAME",
-                              "COMSPEC"]
-        clean_env = {k: v for k, v in os.environ.items() if k.upper() in essential_vars}
-
+        essential_vars = [
+            "SYSTEMROOT", "PATH", "USERPROFILE", "LOCALAPPDATA", "APPDATA",
+            "TMP", "TEMP", "USERNAME", "COMSPEC",
+            "INCLUDE", "LIB", "LIBPATH", "VCINSTALLDIR", "VSINSTALLDIR", "WINDOWSSDKDIR"
+        ]
+        clean_env = {k: v for k, v in os.environ.items() if k.upper() in essential_vars or k.upper().startswith("VS")}
         parent_python_dir = str(Path(sys.executable).parent).lower()
         clean_env["PATH"] = os.pathsep.join(
                 [p for p in clean_env.get("PATH", "").split(os.pathsep) if parent_python_dir not in p.lower()]
